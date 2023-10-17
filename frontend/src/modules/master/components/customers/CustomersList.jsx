@@ -76,16 +76,39 @@ const CustomersList = () => {
   const [selectedId, setSelectedId] = useState("");
   const isLoading = useSelector(selectIsLoading);
   const [isloading, setLoading] = useState(false);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 100,
+  });
+  const [pageState, setPageState] = useState({
+    isLoading: false,
+    data: [],
+    total: 0,
+  });
 
   const fetchData = () => {
-    dispatch(getCustomers())
+    dispatch(
+      getCustomers({
+        pagination: {
+          limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
+          page: paginationModel.page + 1,
+        },
+      })
+    )
       .then(({ payload = {} }) => {
-        const { message } = payload?.data || {};
+        const { message, customers, count } = payload?.data || {};
         if (message) {
           setHttpError(message);
         } else {
           setHttpError("");
-          setCustomers(payload?.data);
+          setPageState((currState) => {
+            return {
+              ...currState,
+              isLoading: false,
+              data: customers,
+              total: count,
+            };
+          });
         }
       })
       .catch(() => {
@@ -97,7 +120,7 @@ const CustomersList = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [paginationModel]);
   const updateSearchValue = useMemo(() => {
     return debounce((newValue) => {
       apiRef.current.setQuickFilterValues(
@@ -107,14 +130,14 @@ const CustomersList = () => {
   }, [apiRef]);
 
   useEffect(() => {
-    if (search && customers?.length) {
+    if (search && pageState.data?.length) {
       setLoading(true);
       updateSearchValue(search);
       setTimeout(() => {
         setLoading(false);
       }, 500);
     }
-  }, [customers]);
+  }, [pageState.data]);
 
   const onSearchChange = (e) => {
     updateSearchValue(e.target.value);
@@ -220,12 +243,18 @@ const CustomersList = () => {
         <div style={{ width: "100%" }}>
           <DataGrid
             apiRef={apiRef}
-            sx={{ backgroundColor: "primary.contrastText" }}
             autoHeight
             density="compact"
-            getRowId={(row) => row._id}
-            rows={customers}
+            rows={pageState.data}
+            rowCount={pageState.total}
+            loading={pageState.isLoading}
+            pageSizeOptions={[100]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
             columns={columns}
+            getRowId={(row) => row?._id}
+            sx={{ backgroundColor: "primary.contrastText" }}
             initialState={{
               ...columns,
               columns: {
@@ -234,6 +263,10 @@ const CustomersList = () => {
                 },
               },
             }}
+            disableSelectionOnClick
+            disableColumnFilter
+            disableColumnSelector
+            disableDensitySelector
             components={{
               Toolbar: () => (
                 <GridToolbarContainer
@@ -261,9 +294,6 @@ const CustomersList = () => {
                 </GridToolbarContainer>
               ),
             }}
-            pageSize={10}
-            rowsPerPageOptions={[10]}
-            disableSelectionOnClick
           />
         </div>
       </div>

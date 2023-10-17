@@ -92,7 +92,7 @@ const RateMasterList = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
-  }, []);
+  }, [paginationModel]);
 
   const updateSearchValue = useMemo(() => {
     return debounce((newValue) => {

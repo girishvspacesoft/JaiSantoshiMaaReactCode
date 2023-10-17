@@ -740,18 +740,69 @@ const updateArticle = (req, res, next) => {
 };
 
 // Get customers
-const getCustomers = (req, res, next) => {
-  Customer.find({ active: true })
-    .sort("-createdAt")
-    .exec((error, customers) => {
-      if (error) {
-        return res.status(200).json({
-          message: "Error fetching customers!",
-        });
-      } else {
-        res.json(customers);
-      }
+const getCustomers = async (req, res, next) => {
+  try {
+    const search = res.body;
+    const param = { active: true };
+    if (search) {
+      param.name = { $regex: new RegExp(search?.trim?.()), $options: "i" };
+    }
+    const customers = await Customer.find(param)
+      .select("name _id address city telephone email") // Only select necessary fields
+      .lean();
+    res.json(customers);
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching customers!",
+      error: error.message,
     });
+  }
+};
+
+// Get customers
+const getCustomersForDrop = async (req, res, next) => {
+  try {
+    const pageSize = 100; // Adjust this based on your requirements
+    const search = req.body.search;
+    const param = { active: true };
+    if (search) {
+      param.name = { $regex: new RegExp(search?.trim?.()), $options: "i" };
+    }
+    const customers = await Customer.find(param)
+      .limit(pageSize)
+      .select("name _id address city telephone email") // Only select necessary fields
+      .lean();
+    res.json(customers);
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching customers!",
+      error: error.message,
+    });
+  }
+};
+
+// Get customers
+const getCustomersWithPagination = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 100 } = req.body.pagination || {};
+    const start = (page - 1) * limit;
+    const customers = await Customer.find({ active: true })
+      .select("name email") // Only select necessary fields
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await Customer.countDocuments({ active: true });
+    res.json({
+      customers,
+      count,
+    });
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching customers!",
+      error: error.message,
+    });
+  }
 };
 
 const getCustomersByBranch = (req, res, next) => {
@@ -1393,12 +1444,28 @@ const getVehicleList = (req, res, next) => {
     { $match: { active: true } },
     {
       $addFields: {
-        vehicleTypeId: { $toObjectId: "$vehicleType" },
+        vehicleTypeId: {
+          $cond: {
+            if: {
+              $ne: ["$vehicleType", "UNKNOWN"],
+            },
+            then: { $toObjectId: "$vehicleType" },
+            else: "$vehicleType",
+          },
+        },
       },
     },
     {
       $addFields: {
-        supplierId: { $toObjectId: "$owner" },
+        supplierId: {
+          $cond: {
+            if: {
+              $ne: ["$owner", "UNKNOWN"],
+            },
+            then: { $toObjectId: "$owner" },
+            else: "$owner",
+          },
+        },
       },
     },
     {
@@ -1406,31 +1473,48 @@ const getVehicleList = (req, res, next) => {
         from: "vehicleType",
         localField: "vehicleTypeId",
         foreignField: "_id",
-        as: "vehicleType",
+        as: "vehicleObj",
       },
     },
-    { $unwind: { path: "$vehicleType", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$vehicleObj", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "supplier",
         localField: "supplierId",
         foreignField: "_id",
-        as: "owner",
+        as: "ownerObj",
+      },
+    },
+    { $unwind: { path: "$ownerObj", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        vehicleType: {
+          $cond: {
+            if: {
+              $ne: ["$vehicleObj.type", null],
+            },
+            then: "$vehicleObj.type",
+            else: "$vehicleType",
+          },
+        },
       },
     },
     {
       $addFields: {
-        vehicleType: "$vehicleType.type",
+        ownerName: {
+          $cond: {
+            if: {
+              $ne: ["$ownerObj", null],
+            },
+            then: "$ownerObj.name",
+            else: "$owner",
+          },
+        },
       },
     },
     {
       $addFields: {
-        ownerName: "$owner.name",
-      },
-    },
-    {
-      $addFields: {
-        ownerAddress: "$owner.address",
+        ownerAddress: "$ownerObj.address",
       },
     },
     { $sort: { createdAt: -1 } },
@@ -1441,6 +1525,8 @@ const getVehicleList = (req, res, next) => {
         ownerName: 1,
         ownerAddress: 1,
         vehicleType: 1,
+        owner: 1,
+        vehicleTypeId: 1,
       },
     },
   ]).exec((error, vehicles) => {
@@ -2290,6 +2376,8 @@ module.exports = {
   updateArticle,
   getCustomers,
   getCustomersByBranch,
+  getCustomersWithPagination,
+  getCustomersForDrop,
   getCustomer,
   addCustomer,
   updateCustomer,

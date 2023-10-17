@@ -35,11 +35,12 @@ import {
 import {
   createLorryReceipt,
   downloadLorryReceipt,
+  getCustomers,
   selectIsLoading,
 } from "./slice/lorryReceiptSlice";
 
 const initialState = {
-  branch: "",
+  branch: null,
   lrNo: "",
   date: new Date(),
   invoiceNo: "",
@@ -167,7 +168,7 @@ const LorryReceiptAdd = () => {
   const [lorryReceipt, setLorryReceipt] = useState({
     ...initialState,
     branch: state,
-    deliveryType: DELIVERY_TYPES[0],
+    deliveryType: DELIVERY_TYPES[0] || null,
   });
   const [formErrors, setFormErrors] = useState(initialErrorState);
   const [httpError, setHttpError] = useState("");
@@ -527,6 +528,15 @@ const LorryReceiptAdd = () => {
     }
   };
 
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 4) {
+      dispatch(getCustomers(search));
+    } else if (!search) {
+      dispatch(getCustomers());
+    }
+  };
+
   const consignorChange = ({ target }) => {
     setLorryReceipt((currState) => {
       return {
@@ -534,6 +544,7 @@ const LorryReceiptAdd = () => {
         consignorName: target.value,
       };
     });
+    fetchCustomers(target.value);
   };
 
   const consigneeChangeHandler = (e, value) => {
@@ -573,6 +584,7 @@ const LorryReceiptAdd = () => {
         consigneeName: target.value,
       };
     });
+    fetchCustomers(target.value);
   };
   const autocompleteChangeListener = (e, option, name) => {
     setLorryReceipt((currState) => {
@@ -600,6 +612,11 @@ const LorryReceiptAdd = () => {
     });
   }, [lorryReceipt.payType]);
 
+  const isConsigneeDisable =
+    lorryReceipt.consignee && typeof lorryReceipt.consignee === "object";
+
+  const isConsignorDisable =
+    lorryReceipt.consignor && typeof lorryReceipt.consignor === "object";
   return (
     <>
       {isLoading && <LoadingSpinner />}
@@ -634,7 +651,7 @@ const LorryReceiptAdd = () => {
                     size="small"
                     name="branch"
                     options={branches}
-                    value={lorryReceipt.branch || null}
+                    value={lorryReceipt.branch}
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "branch")
                     }
@@ -782,6 +799,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="consignorAddress"
                     id="consignorAddress"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorAddress.invalid && (
                     <FormHelperText>
@@ -805,6 +823,7 @@ const LorryReceiptAdd = () => {
                     onInput={validatePhoneNumber}
                     name="consignorPhone"
                     id="consignorPhone"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorPhone.invalid && (
                     <FormHelperText>
@@ -827,6 +846,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="consignorEmail"
                     id="consignorEmail"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorEmail.invalid && (
                     <FormHelperText>
@@ -846,6 +866,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="from"
                     id="from"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.from.invalid && (
                     <FormHelperText>{formErrors.from.message}</FormHelperText>
@@ -901,6 +922,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="consigneeAddress"
                     id="consigneeAddress"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeAddress.invalid && (
                     <FormHelperText>
@@ -924,6 +946,7 @@ const LorryReceiptAdd = () => {
                     onInput={validatePhoneNumber}
                     name="consigneePhone"
                     id="consigneePhone"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneePhone.invalid && (
                     <FormHelperText>
@@ -946,6 +969,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="consigneeEmail"
                     id="consigneeEmail"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeEmail.invalid && (
                     <FormHelperText>
@@ -965,6 +989,7 @@ const LorryReceiptAdd = () => {
                     onChange={inputChangeHandler}
                     name="to"
                     id="to"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.to.invalid && (
                     <FormHelperText>{formErrors.to.message}</FormHelperText>
@@ -1130,7 +1155,7 @@ const LorryReceiptAdd = () => {
                     size="small"
                     name="deliveryType"
                     options={DELIVERY_TYPES}
-                    value={lorryReceipt.deliveryType}
+                    value={lorryReceipt.deliveryType || null}
                     disabled
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "deliveryType")

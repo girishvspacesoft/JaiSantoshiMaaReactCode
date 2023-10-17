@@ -31,7 +31,7 @@ const initialState = {
   description: "",
   weight: "",
   chargeWeight: "",
-  rateType: RATE_TYPES[0],
+  rateType: RATE_TYPES[0] || null,
   rate: "",
   freight: "",
 };

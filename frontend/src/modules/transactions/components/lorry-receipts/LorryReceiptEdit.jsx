@@ -33,6 +33,7 @@ import {
 } from "../../../../services/utils";
 import {
   downloadLorryReceipt,
+  getCustomers,
   getLorryReceipt,
   selectIsLoading,
   updateLorryReceipt,
@@ -547,7 +548,14 @@ const LorryReceiptEdit = () => {
       };
     });
   };
-
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 4) {
+      dispatch(getCustomers(search));
+    } else if (!search) {
+      dispatch(getCustomers());
+    }
+  };
   const consignorChangeHandler = (e, value) => {
     if (value) {
       if (typeof value === "object") {
@@ -585,6 +593,7 @@ const LorryReceiptEdit = () => {
         consignorName: target.value,
       };
     });
+    fetchCustomers(target.value);
   };
 
   const consigneeChangeHandler = (e, value) => {
@@ -624,6 +633,7 @@ const LorryReceiptEdit = () => {
         consigneeName: target.value,
       };
     });
+    fetchCustomers(target.value);
   };
   const autocompleteChangeListener = (e, option, name) => {
     setLorryReceipt((currState) => {
@@ -638,7 +648,11 @@ const LorryReceiptEdit = () => {
       };
     });
   };
+  const isConsigneeDisable =
+    lorryReceipt.consignee && typeof lorryReceipt.consignee === "object";
 
+  const isConsignorDisable =
+    lorryReceipt.consignor && typeof lorryReceipt.consignor === "object";
   return (
     <>
       {isLoading && <LoadingSpinner />}
@@ -677,7 +691,7 @@ const LorryReceiptEdit = () => {
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "branch")
                     }
-                    getOptionLabel={(branch) => branch.name}
+                    getOptionLabel={(branch) => branch.name || ""}
                     openOnFocus
                     disabled={
                       user &&
@@ -798,6 +812,7 @@ const LorryReceiptEdit = () => {
                         fullWidth
                       />
                     )}
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignor.invalid && (
                     <FormHelperText>
@@ -820,6 +835,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consignorAddress"
                     id="consignorAddress"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorAddress.invalid && (
                     <FormHelperText>
@@ -843,6 +859,7 @@ const LorryReceiptEdit = () => {
                     onInput={validatePhoneNumber}
                     name="consignorPhone"
                     id="consignorPhone"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorPhone.invalid && (
                     <FormHelperText>
@@ -866,6 +883,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consignorEmail"
                     id="consignorEmail"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorEmail.invalid && (
                     <FormHelperText>
@@ -885,6 +903,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="from"
                     id="from"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.from.invalid && (
                     <FormHelperText>{formErrors.from.message}</FormHelperText>
@@ -940,6 +959,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consigneeAddress"
                     id="consigneeAddress"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeAddress.invalid && (
                     <FormHelperText>
@@ -963,6 +983,7 @@ const LorryReceiptEdit = () => {
                     onInput={validatePhoneNumber}
                     name="consigneePhone"
                     id="consigneePhone"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneePhone.invalid && (
                     <FormHelperText>
@@ -986,6 +1007,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consigneeEmail"
                     id="consigneeEmail"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeEmail.invalid && (
                     <FormHelperText>
@@ -1005,6 +1027,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="to"
                     id="to"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.to.invalid && (
                     <FormHelperText>{formErrors.to.message}</FormHelperText>
