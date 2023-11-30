@@ -9,7 +9,7 @@
   }
 
   html {
-    zoom: 0.55;
+    zoom: 0.54;
   }
 
   * {
@@ -151,6 +151,13 @@
     padding-bottom: 10px;
   }
 
+
+  .noBdrTop2 {
+    border-top: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
   .footer_gst {
     font-size: 9pt;
     font-weight: bold;
@@ -162,8 +169,13 @@
   }
 
   .dashed {
-    border: 1px dashed black;
-    margin: 2mm 0;
+    margin-top: 4mm;
+    padding-top: 2mm;
+  }
+
+  .padding-table {
+    margin-top: 1mm;
+
   }
 </style>
 
@@ -223,7 +235,7 @@
             <td width="15%" class="center">
               <canvas id="barcode"></canvas>
             </td>
-            <td width="12%" class="center">Date: {{info.lr.date}}</td>
+            <td width="12%">Date: <br />{{info.lr.date}}</td>
           </tr>
           <tr>
             <td colspan="2">From: {{info.lr.from}}</td>
@@ -238,15 +250,15 @@
       <td>
         <table>
           <tr>
-            <td class="noBdr-right">Consignor: {{info.consignor.name}}</td>
-            <td>Mobile: {{info.consignor.telephone}}</td>
+            <td class="noBdr-right">Consignor: {{info.lr.consignorName}}</td>
+            <td>Mobile: {{info.lr.consignorPhone}}</td>
             <td class="center">E-Way Bill no.</td>
           </tr>
           <tr>
             <td class="noBdr-right noBdrBtm">
-              Consignee: {{info.consignee.name}}
+              Consignee: {{info.lr.consigneeName}}
             </td>
-            <td class="noBdrBtm">Mobile: {{info.consignee.telephone}}</td>
+            <td class="noBdrBtm">Mobile: {{info.lr.consigneePhone}}</td>
             <td class="noBdrBtm center">{{info.lr.eWayBillNo}}</td>
           </tr>
         </table>
@@ -379,13 +391,13 @@
       </td>
     </tr>
   </table>
-  <hr class="dashed" />
+  <div class="dashed"></div>
   <table>
     <tr>
       <td>
         <table>
           <tr>
-            <td width="13%" rowspan="3" style="padding: 0" class="center noBdrBtm">
+            <td width="13%" rowspan="3" style="padding: 10px" class="center noBdrBtm">
               <img src="{{{info.logo}}}" alt="Jai Santoshi Maa" class="logo_image" />
             </td>
             <td width="50%" rowspan="3" class="noBdrBtm center">
@@ -399,13 +411,13 @@
                 नगर रोड, वाघोली, (पुणे)
               </p>
             </td>
-            <td width="10%" rowspan="3" style="padding: 0" class="center noBdrBtm">
+            <td width="10%" rowspan="3" style="padding: 10px" class="center noBdrBtm">
               <img src="{{{info.laxmi}}}" alt="Jai Santoshi Maa" class="laxmi_image" />
             </td>
             <td width="15%" class="center">
               <canvas id="barcode1"></canvas>
             </td>
-            <td width="12%" class="center">Date: {{info.lr.date}}</td>
+            <td width="12%">Date: <br />{{info.lr.date}}</td>
           </tr>
           <tr>
             <td colspan="2">From: {{info.lr.from}}</td>
@@ -420,15 +432,15 @@
       <td>
         <table>
           <tr>
-            <td class="noBdr-right">Consignor: {{info.consignor.name}}</td>
-            <td>Mobile: {{info.consignor.telephone}}</td>
+            <td class="noBdr-right">Consignor: {{info.lr.consignorName}}</td>
+            <td>Mobile: {{info.lr.consignorPhone}}</td>
             <td class="center">E-Way Bill no.</td>
           </tr>
           <tr>
             <td class="noBdr-right noBdrBtm">
-              Consignee: {{info.consignee.name}}
+              Consignee: {{info.lr.consigneeName}}
             </td>
-            <td class="noBdrBtm">Mobile: {{info.consignee.telephone}}</td>
+            <td class="noBdrBtm">Mobile: {{info.lr.consigneePhone}}</td>
             <td class="noBdrBtm center">{{info.lr.eWayBillNo}}</td>
           </tr>
         </table>
@@ -436,7 +448,7 @@
     </tr>
     <tr>
       <td>
-        <table>
+        <table style="height: 50px;">
           <tr>
             <td class="center">No. of Pkg.</td>
             <td class="center">Description (Said to Content)</td>
@@ -498,9 +510,9 @@
     </tr>
     <tr>
       <td>
-        <table class="noBdrTop">
+        <table class="noBdrTop2">
           <tr>
-            <td style="padding: 4px">
+            <td style="padding: 5px">
               <div style="display: flex;">
                 PAID
                 <div class="checkbox">
@@ -561,8 +573,8 @@
       </td>
     </tr>
   </table>
-  <hr class="dashed" />
-  <table>
+  <div class="dashed"></div>
+  <table class="padding-table">
     <tr>
       <td>
         <table>
@@ -587,7 +599,7 @@
             <td width="15%" class="center">
               <canvas id="barcode2"></canvas>
             </td>
-            <td width="12%" class="center">Date: {{info.lr.date}}</td>
+            <td width="12%">Date: <br />{{info.lr.date}}</td>
           </tr>
           <tr>
             <td colspan="2">From: {{info.lr.from}}</td>
@@ -602,15 +614,15 @@
       <td>
         <table>
           <tr>
-            <td class="noBdr-right">Consignor: {{info.consignor.name}}</td>
-            <td>Mobile: {{info.consignor.telephone}}</td>
+            <td class="noBdr-right">Consignor: {{info.lr.consignorName}}</td>
+            <td>Mobile: {{info.lr.consignorPhone}}</td>
             <td class="center">E-Way Bill no.</td>
           </tr>
           <tr>
             <td class="noBdr-right noBdrBtm">
-              Consignee: {{info.consignee.name}}
+              Consignee: {{info.lr.consigneeName}}
             </td>
-            <td class="noBdrBtm">Mobile: {{info.consignee.telephone}}</td>
+            <td class="noBdrBtm">Mobile: {{info.lr.consigneePhone}}</td>
             <td class="noBdrBtm center">{{info.lr.eWayBillNo}}</td>
           </tr>
         </table>

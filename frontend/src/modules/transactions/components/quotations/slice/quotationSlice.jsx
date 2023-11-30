@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   addQuotation,
+  fetchBranches,
+  fetchCustomers,
   fetchPlaces,
   fetchQuotation,
   fetchQuotations,
@@ -12,8 +14,26 @@ import {
 const initialState = {
   status: "idle",
   places: [],
+  branches: [],
+  customers: [],
   search: "",
 };
+
+export const getBranches = createAsyncThunk(
+  "GET_BRANCHES",
+  async (requestObject) => {
+    const { data, status } = await fetchBranches(requestObject);
+    return { data, status };
+  }
+);
+
+export const getCustomers = createAsyncThunk(
+  "GET_CUSTOMER",
+  async (requestObject) => {
+    const { data, status } = await fetchCustomers(requestObject);
+    return { data, status };
+  }
+);
 
 export const getPlaces = createAsyncThunk(
   "GET_PLACES",
@@ -81,6 +101,16 @@ export const quotationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(getBranches.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(getBranches.fulfilled, (state, { payload }) => {
+        // state.status = "succeeded";
+        state.branches = payload?.data;
+      })
+      .addCase(getBranches.rejected, (state) => {
+        state.status = "failed";
+      })
       .addCase(getPlaces.pending, (state) => {
         state.status = "loading";
       })
@@ -93,6 +123,14 @@ export const quotationSlice = createSlice({
       .addCase(getPlaces.rejected, (state) => {
         state.status = "failed";
       })
+
+      .addCase(getCustomers.pending, (state) => {})
+      .addCase(getCustomers.fulfilled, (state, { payload }) => {
+        state.customers = payload?.data?.map?.((customer) => {
+          return { ...customer, label: customer.name };
+        });
+      })
+      .addCase(getCustomers.rejected, (state) => {})
 
       .addCase(createQuotation.pending, (state) => {
         state.status = "loading";

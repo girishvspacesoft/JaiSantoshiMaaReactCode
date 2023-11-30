@@ -5,16 +5,16 @@ const Bill = new Schema(
   {
     branch: {
       type: String,
-      required: true,
+      //required: true,
     },
     billNo: {
       type: Number,
       unique: true,
-      required: true,
+      //required: true,
     },
     date: {
       type: String,
-      required: true,
+      //required: true,
     },
     from: {
       type: String,
@@ -24,7 +24,7 @@ const Bill = new Schema(
     },
     customer: {
       type: String,
-      required: true,
+      //required: true,
     },
     lrList: [
       {
@@ -61,13 +61,13 @@ const Bill = new Schema(
     },
     total: {
       type: Number,
-      required: true,
+      //required: true,
       default: 0,
       //totalFreight + freight + localFreight - discount
     },
     grandTotal: {
       type: Number,
-      required: true,
+      //required: true,
       default: 0,
       //totalFreight + freight + localFreight + cgst + sgst - discount
     },
@@ -78,15 +78,15 @@ const Bill = new Schema(
       {
         receivingDate: {
           type: String,
-          required: true,
+          //required: true,
         },
         receive: {
           type: Number,
-          required: true,
+          //required: true,
         },
         payMode: {
           type: String,
-          required: true,
+          //required: true,
         },
         bankName: {
           type: String,
@@ -111,7 +111,7 @@ const Bill = new Schema(
         },
         createdBy: {
           type: String,
-          required: true,
+          //required: true,
         },
       },
     ],

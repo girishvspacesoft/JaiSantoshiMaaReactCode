@@ -33,7 +33,14 @@ export function fetchArticles() {
   return fetchFromApiServer("GET", url);
 }
 
-export function fetchCustomersForRateMaster() {
+export function fetchCustomersForRateMaster(search) {
   const url = `api/master/getCustomersForRateMaster`;
-  return fetchFromApiServer("GET", url);
+  return fetchFromApiServer("POST", url, { search });
+}
+
+export function removeRateMaster(id) {
+  const requestObject = {};
+  requestObject.updatedBy = getEmpId();
+  const url = `api/master/removeRateMaster/${id}`;
+  return fetchFromApiServer("PATCH", url, requestObject);
 }

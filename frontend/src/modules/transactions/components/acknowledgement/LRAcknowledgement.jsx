@@ -33,6 +33,7 @@ import {
   isSuperAdminOrAdmin,
 } from "../../../../services/utils";
 import ToggleButton from "@mui/material/ToggleButton";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import {
   getBranches,
@@ -42,10 +43,28 @@ import {
   setSearch as onSearch,
 } from "./slice/acknowledgeSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
+import { checkAuth } from "../../../../router/RequireAuth";
+import { deleteLorryReceipt } from "../lorry-receipts/slice/lorryReceiptSlice";
+import CustomDialog from "../../../../ui-controls/Dialog";
+
+const now = new Date();
+const year = now.getFullYear();
+const month = now.getMonth();
+const noOfDays = new Date(year, month + 1, 0).getDate();
+
+const start = new Date();
+start.setFullYear(year);
+start.setMonth(month);
+start.setDate(1);
+const end = new Date();
+end.setFullYear(year);
+end.setMonth(month);
+end.setDate(noOfDays);
 
 const initialState = {
-  startDate: null,
-  endDate: null,
+  startDate: start,
+  endDate: end,
   type: "",
 };
 
@@ -125,12 +144,20 @@ const LRAcknowledgement = () => {
           e.stopPropagation();
           return navigateToEdit(params.row._id);
         };
-
+        const triggerDelete = (e) => {
+          e.stopPropagation();
+          return removeLorryReceipt(params.row._id);
+        };
         return (
           <>
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -152,6 +179,8 @@ const LRAcknowledgement = () => {
   const [getLR, setGetLR] = useState(true);
   const [isloading, setLoading] = useState(false);
   const { search: searchData } = useSelector(({ acknowledge }) => acknowledge);
+  const [selectedId, setSelectedId] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -187,37 +216,41 @@ const LRAcknowledgement = () => {
       });
   }, []);
 
+  const fetchData = () => {
+    const requestObject = {
+      query: search,
+      branch: selectedBranch._id,
+      pagination: {
+        limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
+        page: paginationModel.page + 1,
+      },
+    };
+    dispatch(getLRAckWithCount(requestObject))
+      .then(({ payload = {} }) => {
+        const { message } = payload?.data || {};
+        if (message) {
+          setHttpError(message);
+        } else {
+          setPageState((currState) => {
+            return {
+              ...currState,
+              isLoading: false,
+              data: [],
+              total: payload?.data.count,
+            };
+          });
+          setAcknowledgements(payload?.data.lorryReceipts);
+        }
+        setIsSubmitted(false);
+      })
+      .catch((error) => {
+        setHttpError(error.message);
+      });
+  };
+
   useEffect(() => {
     if (selectedBranch?._id && isSubmitted && !hasErrors) {
-      const requestObject = {
-        query: search,
-        branch: selectedBranch._id,
-        pagination: {
-          limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
-          page: paginationModel.page + 1,
-        },
-      };
-      dispatch(getLRAckWithCount(requestObject))
-        .then(({ payload = {} }) => {
-          const { message } = payload?.data || {};
-          if (message) {
-            setHttpError(message);
-          } else {
-            setPageState((currState) => {
-              return {
-                ...currState,
-                isLoading: false,
-                data: [],
-                total: payload?.data.count,
-              };
-            });
-            setAcknowledgements(payload?.data.lorryReceipts);
-          }
-          setIsSubmitted(false);
-        })
-        .catch((error) => {
-          setHttpError(error.message);
-        });
+      fetchData();
     }
   }, [
     getLR,
@@ -292,10 +325,40 @@ const LRAcknowledgement = () => {
       state: { lrId: id },
     });
   };
+  const removeLorryReceipt = (id) => {
+    if (checkAuth("Sales/Purchase", "LorryReceipt", "write")) {
+      setSelectedId(id);
+      setIsDialogOpen(true);
+    }
+  };
 
+  const handleDialogClose = (e) => {
+    setIsDialogOpen(true);
+    if (e.target.value === "true") {
+      dispatch(deleteLorryReceipt(selectedId))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            fetchData();
+          }
+          setIsDialogOpen(false);
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
+    } else {
+      setSelectedId("");
+    }
+    setIsDialogOpen(false);
+  };
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
     setIsSubmitted(true);
+    dispatch(setBranch(value._id));
   };
 
   const submitHandler = (e) => {
@@ -402,7 +465,15 @@ const LRAcknowledgement = () => {
             </Button>
           </div>
         </div>
-
+        {isDialogOpen && (
+          <CustomDialog
+            isOpen={true}
+            onClose={handleDialogClose}
+            title="Are you sure?"
+            content="Do you want to delete the lorry receipt?"
+            warning
+          />
+        )}
         {httpError !== "" && (
           <Stack
             sx={{

@@ -77,6 +77,16 @@ routes
   .route("/getCustomersByBranch")
   .post(checkAuth, masterCtrl.getCustomersByBranch);
 
+// Get customers by branch
+routes
+  .route("/getCustomersForDrop")
+  .post(checkAuth, masterCtrl.getCustomersForDrop);
+
+// Get customers by branch
+routes
+  .route("/getCustomersWithPagination")
+  .post(checkAuth, masterCtrl.getCustomersWithPagination);
+
 //Add a customer
 routes.route("/addCustomer").post(checkAuth, masterCtrl.addCustomer);
 
@@ -211,7 +221,7 @@ routes.route("/addToRateMaster").post(checkAuth, masterCtrl.addToRateMaster);
 
 routes
   .route("/getCustomersForRateMaster")
-  .get(checkAuth, masterCtrl.getCustomersForRateMaster);
+  .post(checkAuth, masterCtrl.getCustomersForRateMaster);
 
 routes
   .route("/getRateMasterById/:id")
@@ -226,6 +236,10 @@ routes
 routes
   .route("/getRateMasterByCustomer/:id")
   .get(checkAuth, masterCtrl.getRateMasterByCustomer);
+
+routes
+  .route("/removeRateMaster/:id")
+  .patch(checkAuth, masterCtrl.removeRateMasterById);
 
 // User search
 

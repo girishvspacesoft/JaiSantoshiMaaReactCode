@@ -26,6 +26,7 @@ import {
   setSearch,
 } from "./slice/placeSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const Places = () => {
   const columns = [
@@ -54,9 +55,11 @@ const Places = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -246,6 +249,7 @@ const Places = () => {
                       autoFocus={!!search}
                       onChange={onSearchChange}
                       value={search}
+                      style={{ width: "300px" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

@@ -10,6 +10,7 @@ import {
   Paper,
   Divider,
   InputAdornment,
+  Autocomplete,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Table from "@mui/material/Table";
@@ -25,6 +26,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LoadingSpinner } from "../../../../ui-controls";
 import Stations from "./Stations";
 import {
+  getCustomers,
   getQuotation,
   selectIsLoading,
   updateQuotation,
@@ -34,7 +36,9 @@ import { validateNumber } from "../../../../services/utils";
 const initialState = {
   date: new Date(),
   customer: "",
+  customerId: null,
   from: null,
+  branch: null,
   to: null,
   otherField: "",
   field1: "",
@@ -47,6 +51,10 @@ const initialState = {
 };
 
 const initialErrorState = {
+  branch: {
+    invalid: false,
+    message: "",
+  },
   date: {
     invalid: false,
     message: "",
@@ -82,7 +90,9 @@ const QuotationEdit = () => {
   const [httpError, setHttpError] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { places } = useSelector(({ quotation }) => quotation) || {};
+  const { places, branches, customers } =
+    useSelector(({ quotation }) => quotation) || {};
+  const user = useSelector((state) => state.user);
 
   const goToQuotationList = useCallback(() => {
     navigate("/transactions/quotations");
@@ -125,6 +135,12 @@ const QuotationEdit = () => {
   const submitHandler = (e) => {
     e.preventDefault();
     if (!validateForm(quotation)) {
+      if (quotation.branch) {
+        quotation.branch = quotation.branch?._id;
+      }
+      if (quotation.customerId) {
+        quotation.customerId = quotation.customerId?._id;
+      }
       dispatch(updateQuotation(quotation))
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
@@ -145,6 +161,9 @@ const QuotationEdit = () => {
 
   const validateForm = (formData) => {
     const errors = { ...initialErrorState };
+    if (!formData.branch) {
+      errors.branch = { invalid: true, message: "Branch is required" };
+    }
     if (!formData.date) {
       errors.date = { invalid: true, message: "Date is required" };
     }
@@ -188,6 +207,57 @@ const QuotationEdit = () => {
     });
   };
 
+  const autocompleteChangeListener = (e, option, name) => {
+    setQuotation((currState) => {
+      return {
+        ...currState,
+        [name]: option,
+      };
+    });
+  };
+
+  const consigneeChangeHandler = (e, value) => {
+    if (value) {
+      if (typeof value === "object") {
+        setQuotation((currState) => {
+          return {
+            ...currState,
+            customerId: value,
+            customer: value.label,
+          };
+        });
+      }
+    } else {
+      setQuotation((currState) => {
+        return {
+          ...currState,
+          customerId: null,
+          customer: "",
+        };
+      });
+    }
+  };
+
+  const consigneeChange = ({ target }) => {
+    setQuotation((currState) => {
+      return {
+        ...currState,
+        customer: target.value,
+        customerId: null,
+      };
+    });
+    fetchCustomers(target.value);
+  };
+
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2) {
+      dispatch(getCustomers(search));
+    } else if (!search) {
+      dispatch(getCustomers());
+    }
+  };
+
   const stationDeleteHandler = (e, index) => {
     e.preventDefault();
     if (quotation.stations?.length) {
@@ -224,6 +294,44 @@ const QuotationEdit = () => {
           <form action="" onSubmit={submitHandler} id="quotationForm">
             <div className="grid grid-6-col">
               <div className="grid-item">
+                <FormControl
+                  fullWidth
+                  size="small"
+                  error={formErrors.branch.invalid}
+                >
+                  <Autocomplete
+                    disablePortal
+                    size="small"
+                    name="branch"
+                    options={branches}
+                    value={quotation.branch}
+                    onChange={(e, value) =>
+                      autocompleteChangeListener(e, value, "branch")
+                    }
+                    getOptionLabel={(branch) => branch.name || ""}
+                    openOnFocus
+                    disabled={
+                      user &&
+                      user.type &&
+                      user.type?.toLowerCase?.() !== "superadmin" &&
+                      user.type?.toLowerCase?.() !== "admin"
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Branch"
+                        name="branch"
+                        error={formErrors.branch.invalid}
+                        fullWidth
+                      />
+                    )}
+                  />
+                  {formErrors.branch.invalid && (
+                    <FormHelperText>{formErrors.branch.message}</FormHelperText>
+                  )}
+                </FormControl>
+              </div>
+              <div className="grid-item">
                 <FormControl fullWidth error={formErrors.date.invalid}>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -254,15 +362,26 @@ const QuotationEdit = () => {
                   size="small"
                   error={formErrors.customer.invalid}
                 >
-                  <TextField
+                  <Autocomplete
+                    id="customerId"
+                    autoSelect
                     size="small"
-                    variant="outlined"
-                    label="Customer"
-                    value={quotation.customer}
-                    error={formErrors.customer.invalid}
-                    onChange={inputChangeHandler}
-                    name="customer"
-                    id="customer"
+                    name="customerId"
+                    options={customers}
+                    value={quotation.customerId}
+                    onChange={(e, value) => consigneeChangeHandler(e, value)}
+                    getOptionLabel={(customer) => customer.name}
+                    openOnFocus
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Customer"
+                        name="customerId"
+                        onChange={(e) => consigneeChange(e)}
+                        error={formErrors.customer.invalid}
+                        fullWidth
+                      />
+                    )}
                   />
 
                   {formErrors.customer.invalid && (
@@ -462,7 +581,7 @@ const QuotationEdit = () => {
 
           {quotation.stations?.length > 0 ? (
             <TableContainer>
-              <Table sx={{ width: 500 }} className="tbl_jsm">
+              <Table sx={{ width: "80%" }} className="tbl_jsm">
                 <TableHead>
                   <TableRow>
                     <TableCell>Station</TableCell>
@@ -470,7 +589,10 @@ const QuotationEdit = () => {
                       Rate per {quotation.ratePer}
                     </TableCell>
                     <TableCell align="right">{quotation.otherField}</TableCell>
-                    <TableCell align="right">&nbsp;</TableCell>
+                    <TableCell align="right">{quotation.field1}</TableCell>
+                    <TableCell align="right">{quotation.field2}</TableCell>
+                    <TableCell align="right">{quotation.field3}</TableCell>
+                    <TableCell align="center">Action</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -486,7 +608,16 @@ const QuotationEdit = () => {
                       <TableCell align="right">
                         &#8377; {station.otherFieldValue}
                       </TableCell>
-                      <TableCell>
+                      <TableCell align="right">
+                        &#8377; {station.field1}
+                      </TableCell>
+                      <TableCell align="right">
+                        &#8377; {station.field2}
+                      </TableCell>
+                      <TableCell align="right">
+                        &#8377; {station.field3}
+                      </TableCell>
+                      <TableCell align="center">
                         <IconButton
                           size="small"
                           onClick={(e) => stationDeleteHandler(e, index)}

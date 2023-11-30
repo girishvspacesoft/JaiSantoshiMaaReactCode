@@ -33,6 +33,7 @@ import {
   selectIsLoading,
   updateBills,
 } from "./slice/paymentCollectionSlice";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const initialState = {
   branch: "",
@@ -231,7 +232,7 @@ const PaymentCollection = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
-
+    fetchCustomers("");
     dispatch(getBanks())
       .then(({ payload = {} }) => {
         const { message } = payload?.data || {};
@@ -300,26 +301,6 @@ const PaymentCollection = () => {
       });
     }
   }, [httpError]);
-
-  useEffect(() => {
-    if (selectedBranch && selectedBranch._id) {
-      dispatch(getCustomersByBranch(selectedBranch._id))
-        .then(({ payload = {} }) => {
-          const { message } = payload?.data || {};
-          if (message) {
-            setHttpError(message);
-          } else {
-            setHttpError("");
-            setCustomers(payload?.data);
-          }
-        })
-        .catch(() => {
-          setHttpError(
-            "Something went wrong! Please try later or contact Administrator."
-          );
-        });
-    }
-  }, [selectedBranch]);
 
   const fetchData = () => {
     dispatch(
@@ -406,6 +387,7 @@ const PaymentCollection = () => {
 
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
+    dispatch(setBranch(value._id));
   };
 
   const customerChangeHandler = (e, value) => {
@@ -426,6 +408,31 @@ const PaymentCollection = () => {
       });
       return updatedState;
     });
+  };
+
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2 || !search) {
+      dispatch(getCustomersByBranch(search))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            setHttpError("");
+            setCustomers(payload?.data);
+          }
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
+    }
+  };
+
+  const consignorChange = ({ target }) => {
+    fetchCustomers(target.value);
   };
 
   const payInputChangeHandler = (e) => {
@@ -637,7 +644,12 @@ const PaymentCollection = () => {
                   getOptionLabel={(customer) => customer.name || ""}
                   openOnFocus
                   renderInput={(params) => (
-                    <TextField {...params} label="Select customer" fullWidth />
+                    <TextField
+                      {...params}
+                      label="Select customer"
+                      fullWidth
+                      onChange={consignorChange}
+                    />
                   )}
                 />
               </FormControl>

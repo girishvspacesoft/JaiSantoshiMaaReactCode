@@ -25,6 +25,7 @@ import {
 import {
   getFormattedDate,
   getFormattedPettyCashNo,
+  isSuperAdminOrAdmin,
 } from "../../../../services/utils";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -35,6 +36,7 @@ import {
   setSearch,
 } from "./slice/moneyTransferSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const MoneyTransfers = () => {
   const columns = [
@@ -83,9 +85,11 @@ const MoneyTransfers = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -230,6 +234,7 @@ const MoneyTransfers = () => {
 
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
+    dispatch(setBranch(value._id));
   };
 
   const handleAddMT = () => {
@@ -340,6 +345,7 @@ const MoneyTransfers = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

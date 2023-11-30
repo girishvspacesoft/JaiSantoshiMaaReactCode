@@ -33,6 +33,7 @@ import {
 } from "../../../../services/utils";
 import {
   downloadLorryReceipt,
+  getCustomers,
   getLorryReceipt,
   selectIsLoading,
   updateLorryReceipt,
@@ -208,15 +209,7 @@ const LorryReceiptEdit = () => {
           } else {
             setHttpError("");
             const updatedResponse = { ...payload?.data };
-            const customerIdsMap = customers?.map?.((customer) => customer._id);
-            const consignorIndex = customerIdsMap?.indexOf?.(
-              payload?.data.consignor
-            );
-            const consignor = customers[consignorIndex];
-            const consigneeIndex = customerIdsMap?.indexOf?.(
-              payload?.data.consignee
-            );
-            const consignee = customers[consigneeIndex];
+
             if (payload?.data.deliveryType) {
               const deliveryTypeIndex = DELIVERY_TYPES?.map?.(
                 (type) => type.label
@@ -240,14 +233,6 @@ const LorryReceiptEdit = () => {
               updatedResponse.toBilled = toBilled;
             }
 
-            if (payload?.data.collectAt) {
-              const collectAtIndex = places
-                ?.map?.((place) => place.name)
-                ?.indexOf?.(payload?.data.collectAt);
-              const collectAt = places[collectAtIndex];
-              updatedResponse.collectAt = collectAt;
-            }
-
             if (payload?.data.serviceTaxBy) {
               const serviceTaxByIndex = SERVICE_TAX_BY?.map?.(
                 (client) => client.label
@@ -255,9 +240,6 @@ const LorryReceiptEdit = () => {
               const serviceTaxBy = SERVICE_TAX_BY[serviceTaxByIndex];
               updatedResponse.serviceTaxBy = serviceTaxBy;
             }
-
-            updatedResponse.consignor = consignor;
-            updatedResponse.consignee = consignee;
 
             if (updatedResponse.payMode) {
               const payModeIndex = PAY_MODE?.map?.(
@@ -268,6 +250,7 @@ const LorryReceiptEdit = () => {
             updatedResponse.branch = branches?.find?.(
               ({ _id }) => _id === updatedResponse.branch
             );
+            updatedResponse.collectAt = updatedResponse.branch;
 
             setLorryReceipt(updatedResponse);
           }
@@ -353,7 +336,7 @@ const LorryReceiptEdit = () => {
         updatedLR.toBilled = updatedLR.toBilled.value;
       }
       if (updatedLR.collectAt) {
-        updatedLR.collectAt = updatedLR.collectAt.value;
+        updatedLR.collectAt = updatedLR.collectAt._id;
       }
       if (updatedLR.serviceTaxBy?.value) {
         updatedLR.serviceTaxBy = updatedLR.serviceTaxBy?.value;
@@ -438,37 +421,37 @@ const LorryReceiptEdit = () => {
     if (!formData.consignor && !formData.consignorName?.trim?.()) {
       errors.consignor = { invalid: true, message: "Consignor is required" };
     }
-    if (!formData.consignorAddress) {
-      errors.consignorAddress = {
-        invalid: true,
-        message: "Consignor address is required",
-      };
-    }
+    // if (!formData.consignorAddress) {
+    //   errors.consignorAddress = {
+    //     invalid: true,
+    //     message: "Consignor address is required",
+    //   };
+    // }
     if (!formData.from?.trim?.()) {
       errors.from = { invalid: true, message: "From is required" };
     }
     if (!formData.consignee && !formData.consigneeName?.trim?.()) {
       errors.consignee = { invalid: true, message: "Consignee is required" };
     }
-    if (!formData.consigneeAddress) {
-      errors.consigneeAddress = {
-        invalid: true,
-        message: "Consignee address is required",
-      };
-    }
-    if (
-      formData.consigneeEmail?.trim?.() &&
-      !emailRegEx.test(formData.consigneeEmail)
-    ) {
-      errors.consigneeEmail = { invalid: true, message: "Email is invalid" };
-    }
+    // if (!formData.consigneeAddress) {
+    //   errors.consigneeAddress = {
+    //     invalid: true,
+    //     message: "Consignee address is required",
+    //   };
+    // }
+    // if (
+    //   formData.consigneeEmail?.trim?.() &&
+    //   !emailRegEx.test(formData.consigneeEmail)
+    // ) {
+    //   errors.consigneeEmail = { invalid: true, message: "Email is invalid" };
+    // }
 
-    if (
-      formData.consignorEmail?.trim?.() &&
-      !emailRegEx.test(formData.consignorEmail)
-    ) {
-      errors.consignorEmail = { invalid: true, message: "Email is invalid" };
-    }
+    // if (
+    //   formData.consignorEmail?.trim?.() &&
+    //   !emailRegEx.test(formData.consignorEmail)
+    // ) {
+    //   errors.consignorEmail = { invalid: true, message: "Email is invalid" };
+    // }
     if (!formData.to?.trim?.()) {
       errors.to = { invalid: true, message: "To is required" };
     }
@@ -547,7 +530,14 @@ const LorryReceiptEdit = () => {
       };
     });
   };
-
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2) {
+      dispatch(getCustomers(search));
+    } else if (!search) {
+      dispatch(getCustomers());
+    }
+  };
   const consignorChangeHandler = (e, value) => {
     if (value) {
       if (typeof value === "object") {
@@ -585,6 +575,7 @@ const LorryReceiptEdit = () => {
         consignorName: target.value,
       };
     });
+    fetchCustomers(target.value);
   };
 
   const consigneeChangeHandler = (e, value) => {
@@ -622,8 +613,10 @@ const LorryReceiptEdit = () => {
       return {
         ...currState,
         consigneeName: target.value,
+        consignee: null,
       };
     });
+    fetchCustomers(target.value);
   };
   const autocompleteChangeListener = (e, option, name) => {
     setLorryReceipt((currState) => {
@@ -632,13 +625,17 @@ const LorryReceiptEdit = () => {
         [name]: option,
         ...(name === "branch"
           ? {
-              collectAt: places?.find?.(({ _id }) => _id === option?.place),
+              collectAt: option,
             }
           : {}),
       };
     });
   };
+  const isConsigneeDisable =
+    lorryReceipt.consignee && typeof lorryReceipt.consignee === "object";
 
+  const isConsignorDisable =
+    lorryReceipt.consignor && typeof lorryReceipt.consignor === "object";
   return (
     <>
       {isLoading && <LoadingSpinner />}
@@ -677,7 +674,7 @@ const LorryReceiptEdit = () => {
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "branch")
                     }
-                    getOptionLabel={(branch) => branch.name}
+                    getOptionLabel={(branch) => branch.name || ""}
                     openOnFocus
                     disabled={
                       user &&
@@ -780,12 +777,12 @@ const LorryReceiptEdit = () => {
                 >
                   <Autocomplete
                     id="consignor"
-                    freeSolo
+                    freeSolo={!!lorryReceipt.consignorName}
                     autoSelect
                     size="small"
                     name="consignor"
                     options={customers}
-                    value={lorryReceipt.consignor}
+                    value={lorryReceipt.consignor || null}
                     onChange={consignorChangeHandler}
                     openOnFocus
                     renderInput={(params) => (
@@ -820,6 +817,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consignorAddress"
                     id="consignorAddress"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorAddress.invalid && (
                     <FormHelperText>
@@ -843,6 +841,7 @@ const LorryReceiptEdit = () => {
                     onInput={validatePhoneNumber}
                     name="consignorPhone"
                     id="consignorPhone"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorPhone.invalid && (
                     <FormHelperText>
@@ -851,7 +850,7 @@ const LorryReceiptEdit = () => {
                   )}
                 </FormControl>
               </div>{" "}
-              <div className="grid-item">
+              {/* <div className="grid-item">
                 <FormControl
                   fullWidth
                   error={formErrors.consignorEmail.invalid}
@@ -866,6 +865,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consignorEmail"
                     id="consignorEmail"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.consignorEmail.invalid && (
                     <FormHelperText>
@@ -873,7 +873,7 @@ const LorryReceiptEdit = () => {
                     </FormHelperText>
                   )}
                 </FormControl>
-              </div>
+              </div> */}
               <div className="grid-item">
                 <FormControl fullWidth error={formErrors.from.invalid}>
                   <TextField
@@ -885,12 +885,14 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="from"
                     id="from"
+                    disabled={isConsignorDisable}
                   />
                   {formErrors.from.invalid && (
                     <FormHelperText>{formErrors.from.message}</FormHelperText>
                   )}
                 </FormControl>
               </div>
+              <div className="grid-item"></div>
               <div className="grid-item"></div>
               <div className="grid-item">
                 <FormControl
@@ -900,12 +902,12 @@ const LorryReceiptEdit = () => {
                 >
                   <Autocomplete
                     id="consignee"
-                    freeSolo
+                    freeSolo={!!lorryReceipt.consigneeName}
                     autoSelect
                     size="small"
                     name="consignee"
                     options={customers}
-                    value={lorryReceipt.consignee}
+                    value={lorryReceipt.consignee || null}
                     onChange={consigneeChangeHandler}
                     openOnFocus
                     renderInput={(params) => (
@@ -940,6 +942,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consigneeAddress"
                     id="consigneeAddress"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeAddress.invalid && (
                     <FormHelperText>
@@ -963,6 +966,7 @@ const LorryReceiptEdit = () => {
                     onInput={validatePhoneNumber}
                     name="consigneePhone"
                     id="consigneePhone"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneePhone.invalid && (
                     <FormHelperText>
@@ -970,8 +974,8 @@ const LorryReceiptEdit = () => {
                     </FormHelperText>
                   )}
                 </FormControl>
-              </div>{" "}
-              <div className="grid-item">
+              </div>
+              {/* <div className="grid-item">
                 <FormControl
                   fullWidth
                   error={formErrors.consigneeEmail.invalid}
@@ -986,6 +990,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="consigneeEmail"
                     id="consigneeEmail"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.consigneeEmail.invalid && (
                     <FormHelperText>
@@ -993,7 +998,7 @@ const LorryReceiptEdit = () => {
                     </FormHelperText>
                   )}
                 </FormControl>
-              </div>
+              </div> */}
               <div className="grid-item">
                 <FormControl fullWidth error={formErrors.to.invalid}>
                   <TextField
@@ -1005,6 +1010,7 @@ const LorryReceiptEdit = () => {
                     onChange={inputChangeHandler}
                     name="to"
                     id="to"
+                    disabled={isConsigneeDisable}
                   />
                   {formErrors.to.invalid && (
                     <FormHelperText>{formErrors.to.message}</FormHelperText>
@@ -1258,6 +1264,8 @@ const LorryReceiptEdit = () => {
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "collectAt")
                     }
+                    disabled
+                    getOptionLabel={(branch) => branch.name || ""}
                     openOnFocus
                     renderInput={(params) => (
                       <TextField

@@ -5,7 +5,7 @@ const LoadingSlip = new Schema(
   {
     branch: {
       type: String,
-      required: true,
+      //required: true,
     },
     lsNo: {
       type: Number,
@@ -13,45 +13,45 @@ const LoadingSlip = new Schema(
     },
     date: {
       type: String,
-      required: true,
+      //required: true,
     },
     vehicleNo: {
       type: String,
-      required: true,
+      //required: true,
     },
     vehicleOwner: {
       type: String,
-      required: true,
+      //required: true,
     },
     vehicleOwnerAddress: {
       type: String,
-      required: true,
+      //required: true,
     },
     vehicleOwnerPhone: {
       type: String,
     },
     driverName: {
       type: String,
-      required: true,
+      //required: true,
     },
     licenseNo: {
       type: String,
-      required: true,
+      //required: true,
     },
     phone: {
       type: String,
-      required: true,
+      //required: true,
     },
     from: {
       type: String,
-      required: true,
+      //required: true,
     },
     fromName: {
       type: String,
     },
     to: {
       type: String,
-      required: true,
+      //required: true,
     },
     toName: {
       type: String,
@@ -63,19 +63,19 @@ const LoadingSlip = new Schema(
     ],
     totalFreight: {
       type: Number,
-      required: true,
+      //required: true,
     },
     rent: {
       type: Number,
-      required: true,
+      //required: true,
     },
     advance: {
       type: Number,
-      required: true,
+      //required: true,
     },
     totalPayable: {
       type: Number,
-      required: true,
+      //required: true,
     },
     totalWeight: {
       type: Number,

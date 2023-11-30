@@ -24,6 +24,7 @@ import {
   selectIsLoading,
 } from "./slice/tripSheetSlice";
 import FileSaver from "file-saver";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const initialState = {
   from: null,
@@ -232,6 +233,7 @@ const LoadingTripSheet = () => {
     setSelectedBranch(value);
     setIsSubmitted(false);
     setSearch(initialState);
+    dispatch(setBranch(value._id));
   };
 
   const submitHandler = (e) => {

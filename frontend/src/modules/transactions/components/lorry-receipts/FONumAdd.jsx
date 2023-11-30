@@ -16,6 +16,7 @@ import {
   selectIsLoading,
 } from "./slice/lorryReceiptSlice";
 import { LoadingSpinner } from "../../../../ui-controls";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const initialState = {
   lr: "",
@@ -40,7 +41,8 @@ const LorryReceiptAdd = () => {
   const [lorryReceipts, setLorryReceipts] = useState([]);
   const [formErrors, setFormErrors] = useState(initialErrorState);
   const [httpError, setHttpError] = useState("");
-
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const { branches } = useSelector(({ lorryreceipt }) => lorryreceipt);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -49,23 +51,32 @@ const LorryReceiptAdd = () => {
   }, [navigate]);
 
   useEffect(() => {
-    dispatch(getLorryReceipts(user.branch))
-      .then(({ payload = {} }) => {
-        const { message } = payload?.data || {};
-        if (message) {
-          setHttpError(message);
-        } else {
-          setHttpError("");
-          const updatedLR = payload?.data?.map?.((lr) => {
-            return { ...lr, label: lr.lrNo, value: lr.lrNo };
-          });
-          setLorryReceipts(updatedLR);
-        }
-      })
-      .catch((error) => {
-        setHttpError(error.message);
-      });
-  }, []);
+    if (selectedBranch) {
+      dispatch(getLorryReceipts(selectedBranch?._id))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            setHttpError("");
+            const updatedLR = payload?.data?.map?.((lr) => {
+              return { ...lr, label: lr.lrNo, value: lr.lrNo };
+            });
+            setLorryReceipts(updatedLR);
+          }
+        })
+        .catch((error) => {
+          setHttpError(error.message);
+        });
+    }
+  }, [selectedBranch]);
+
+  useEffect(() => {
+    const filteredBranch = branches?.find?.(
+      (branch) => branch._id === user.branch
+    );
+    if (filteredBranch) setSelectedBranch(filteredBranch);
+  }, [branches]);
 
   const backButtonHandler = () => {
     goToLorryReceipts();
@@ -80,6 +91,11 @@ const LorryReceiptAdd = () => {
         [name]: value,
       };
     });
+  };
+
+  const branchChangeHandler = (e, value) => {
+    setSelectedBranch(value);
+    setLorryReceipt(initialState);
   };
 
   const submitHandler = (e) => {
@@ -132,6 +148,7 @@ const LorryReceiptAdd = () => {
       return {
         ...currState,
         [name]: option,
+        foNum: option?.foNum || "",
       };
     });
   };
@@ -157,6 +174,23 @@ const LorryReceiptAdd = () => {
         <form action="" onSubmit={submitHandler} id="lorryReceiptForm">
           <Paper sx={{ padding: "20px", marginBottom: "20px" }}>
             <div className="grid grid-6-col">
+              <div className="grid-item">
+                <Autocomplete
+                  disablePortal
+                  size="small"
+                  name="branch"
+                  className="multi-select"
+                  options={branches}
+                  value={selectedBranch || null}
+                  onChange={branchChangeHandler}
+                  disabled={!isSuperAdminOrAdmin()}
+                  getOptionLabel={(branch) => branch.name}
+                  openOnFocus
+                  renderInput={(params) => (
+                    <TextField {...params} label="Select branch" fullWidth />
+                  )}
+                />
+              </div>
               <div className="grid-item">
                 <FormControl
                   fullWidth

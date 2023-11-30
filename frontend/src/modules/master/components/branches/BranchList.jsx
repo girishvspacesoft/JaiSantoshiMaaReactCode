@@ -27,6 +27,7 @@ import {
   setSearch,
 } from "./slice/branchSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const Branches = () => {
   const columns = [
@@ -58,9 +59,11 @@ const Branches = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -251,6 +254,7 @@ const Branches = () => {
                       autoFocus={!!search}
                       onChange={onSearchChange}
                       value={search}
+                      style={{ width: "300px" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

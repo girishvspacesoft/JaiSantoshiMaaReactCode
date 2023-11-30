@@ -31,6 +31,7 @@ import {
   getLorryReceiptsForReport,
   selectIsLoading,
 } from "./slice/lrRegisterSlice";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const initialState = {
   consignor: null,
@@ -124,26 +125,7 @@ const LorryReceiptRegister = () => {
   const [isloading, setLoading] = useState(false);
 
   useEffect(() => {
-    dispatch(getCustomers())
-      .then(({ payload = {} }) => {
-        const { message } = payload?.data || {};
-        if (message) {
-          setHttpError(message);
-        } else {
-          setHttpError("");
-          const updatedCustomers = payload?.data?.map?.((customer) => {
-            return {
-              ...customer,
-              label: customer.name,
-            };
-          });
-          setCustomers(updatedCustomers);
-        }
-      })
-      .catch((error) => {
-        setHttpError(error.message);
-      });
-
+    fetchCustomers("");
     dispatch(getBranches())
       .then(({ payload = {} }) => {
         const { message } = payload?.data || {};
@@ -244,10 +226,40 @@ const LorryReceiptRegister = () => {
     isSubmitted,
   ]);
 
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2 || !search) {
+      dispatch(getCustomers(search))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            setHttpError("");
+            const updatedCustomers = payload?.data?.map?.((customer) => {
+              return {
+                ...customer,
+                label: customer.name,
+              };
+            });
+            setCustomers(updatedCustomers);
+          }
+        })
+        .catch((error) => {
+          setHttpError(error.message);
+        });
+    }
+  };
+
+  const consignorChange = ({ target }) => {
+    fetchCustomers(target.value);
+  };
+
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
     setIsSubmitted(false);
     setSearch(initialState);
+    dispatch(setBranch(value._id));
   };
 
   const submitHandler = (e) => {
@@ -424,7 +436,12 @@ const LorryReceiptRegister = () => {
                     }
                     openOnFocus
                     renderInput={(params) => (
-                      <TextField {...params} label="Customer" fullWidth />
+                      <TextField
+                        {...params}
+                        label="Customer"
+                        fullWidth
+                        onChange={consignorChange}
+                      />
                     )}
                   />
                 </FormControl>

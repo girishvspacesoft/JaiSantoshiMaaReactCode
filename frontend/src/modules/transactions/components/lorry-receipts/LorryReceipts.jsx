@@ -22,6 +22,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import EmailIcon from "@mui/icons-material/Email";
 import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   LoadingSpinner,
   Dialog as CustomDialog,
@@ -35,6 +36,7 @@ import {
 } from "../../../../services/utils";
 import { checkAuth } from "../../../../router/RequireAuth";
 import {
+  deleteLorryReceipt,
   downloadLorryReceipt,
   getArticles,
   getBranches,
@@ -45,6 +47,7 @@ import {
   setSearch as onSearch,
 } from "./slice/lorryReceiptSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const LorryReceipts = () => {
   const columns = [
@@ -108,7 +111,10 @@ const LorryReceipts = () => {
           e.stopPropagation();
           return navigateToEdit(params.row._id);
         };
-
+        const triggerDelete = (e) => {
+          e.stopPropagation();
+          return removeLorryReceipt(params.row._id);
+        };
         return (
           <>
             <IconButton size="small" onClick={triggerDownload} color="primary">
@@ -123,7 +129,11 @@ const LorryReceipts = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            {/* <IconButton size='small' onClick={triggerDelete} color='error'><DeleteIcon /></IconButton> */}
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -137,7 +147,6 @@ const LorryReceipts = () => {
   const [branches, setbranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [httpError, setHttpError] = useState("");
-  const [deleteLRId, setDeleteLRId] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [viewLRId, setViewLRId] = useState("");
@@ -190,38 +199,43 @@ const LorryReceipts = () => {
     dispatch(getPlaces());
   }, []);
 
+  const fetchData = () => {
+    const requestObject = {
+      branch: selectedBranch._id,
+      pagination: {
+        limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
+        page: paginationModel.page + 1,
+      },
+    };
+    dispatch(getLorryReceiptsWithCount(requestObject))
+      .then(({ payload = {} }) => {
+        const { message } = payload?.data || {};
+        if (message) {
+          setHttpError(message);
+        } else {
+          setPageState((currState) => {
+            return {
+              ...currState,
+              isLoading: false,
+              data: payload?.data.lorryReceipts?.map?.((lr) => ({
+                ...lr,
+                date: getFormattedDate(new Date(lr.date)),
+                total: lr.total?.toFixed?.(2),
+              })),
+              total: payload?.data.count,
+            };
+          });
+          setHttpError("");
+        }
+      })
+      .catch((error) => {
+        setHttpError(error.message);
+      });
+  };
+
   useEffect(() => {
     if (selectedBranch?._id) {
-      const requestObject = {
-        branch: selectedBranch._id,
-        pagination: {
-          limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
-          page: paginationModel.page + 1,
-        },
-      };
-      dispatch(getLorryReceiptsWithCount(requestObject))
-        .then(({ payload = {} }) => {
-          const { message } = payload?.data || {};
-          if (message) {
-            setHttpError(message);
-          } else {
-            setPageState((currState) => {
-              return {
-                ...currState,
-                isLoading: false,
-                data: payload?.data.lorryReceipts?.map?.((lr) => ({
-                  ...lr,
-                  date: getFormattedDate(new Date(lr.date)),
-                  total: lr.total?.toFixed?.(2),
-                })),
-                total: payload?.data.count,
-              };
-            });
-          }
-        })
-        .catch((error) => {
-          setHttpError(error.message);
-        });
+      fetchData();
     }
   }, [selectedBranch, paginationModel.page, paginationModel.pageSize]);
 
@@ -328,10 +342,31 @@ const LorryReceipts = () => {
     }
   };
 
+  const removeLorryReceipt = (id) => {
+    if (checkAuth("Sales/Purchase", "LorryReceipt", "write")) {
+      setSelectedId(id);
+      setIsDialogOpen(true);
+    }
+  };
+
   const handleDialogClose = (e) => {
     setIsDialogOpen(true);
     if (e.target.value === "true") {
-      setDeleteLRId(selectedId);
+      dispatch(deleteLorryReceipt(selectedId))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            fetchData();
+          }
+          setIsDialogOpen(false);
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
     } else {
       setSelectedId("");
     }
@@ -344,6 +379,7 @@ const LorryReceipts = () => {
       page: 0,
       pageSize: 100,
     });
+    dispatch(setBranch(value._id));
   };
 
   return (

@@ -25,6 +25,7 @@ import {
   selectIsLoading,
 } from "./slice/challanRegisterSlice";
 import FileSaver from "file-saver";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const initialState = {
   from: null,
@@ -156,20 +157,7 @@ const ChallanNoteRegister = () => {
       .catch((error) => {
         setHttpError(error.message);
       });
-
-    dispatch(getCustomers())
-      .then(({ payload = {} }) => {
-        const { message } = payload?.data || {};
-        if (message) {
-          setHttpError(message);
-        } else {
-          setHttpError("");
-          setCustomers(payload?.data);
-        }
-      })
-      .catch((error) => {
-        setHttpError(error.message);
-      });
+    fetchCustomers("");
   }, []);
 
   useEffect(() => {
@@ -231,6 +219,29 @@ const ChallanNoteRegister = () => {
     search.to,
   ]);
 
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2 || !search) {
+      dispatch(getCustomers(search))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            setHttpError("");
+            setCustomers(payload?.data);
+          }
+        })
+        .catch((error) => {
+          setHttpError(error.message);
+        });
+    }
+  };
+
+  const consignorChange = ({ target }) => {
+    fetchCustomers(target.value);
+  };
+
   const triggerDownload = (e) => {
     e.preventDefault();
     const query = { isPrint: true };
@@ -286,6 +297,7 @@ const ChallanNoteRegister = () => {
     setSelectedBranch(value);
     setIsSubmitted(false);
     setSearch(initialState);
+    dispatch(setBranch(value._id));
   };
 
   const submitHandler = (e) => {
@@ -415,7 +427,12 @@ const ChallanNoteRegister = () => {
                     openOnFocus
                     getOptionLabel={(customer) => customer.name}
                     renderInput={(params) => (
-                      <TextField {...params} label="Customer" fullWidth />
+                      <TextField
+                        {...params}
+                        label="Customer"
+                        fullWidth
+                        onChange={(e) => consignorChange(e)}
+                      />
                     )}
                   />
                 </FormControl>

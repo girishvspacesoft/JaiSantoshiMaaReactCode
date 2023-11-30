@@ -16,7 +16,10 @@ import { IconButton } from "@mui/material";
 import { Alert, Stack } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { getFormattedDate } from "../../../../services/utils";
+import {
+  getFormattedDate,
+  isSuperAdminOrAdmin,
+} from "../../../../services/utils";
 import { checkAuth } from "../../../../router/RequireAuth";
 import { Dialog, LoadingSpinner } from "../../../../ui-controls";
 import { useDispatch, useSelector } from "react-redux";
@@ -62,9 +65,11 @@ const EmployeeList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -257,6 +262,7 @@ const EmployeeList = () => {
                       autoFocus={!!search}
                       onChange={onSearchChange}
                       value={search}
+                      style={{ width: "300px" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

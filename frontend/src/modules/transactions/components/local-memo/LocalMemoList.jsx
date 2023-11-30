@@ -30,6 +30,7 @@ import {
   getPlaces,
   selectIsLoading,
 } from "./slice/localMemoSlice";
+import { setBranch } from "../../../user/slice/userSlice";
 
 export const isSuperAdminOrAdmin = () => {
   const user = getUserData();
@@ -121,9 +122,11 @@ const LocalMemoList = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -215,11 +218,12 @@ const LocalMemoList = () => {
     }
   }, [selectedBranch, places]);
 
-  const branchChangeHandler = (e) => {
+  const branchChangeHandler = (e, value) => {
     const filteredBranch = branches?.filter?.(
       (branch) => branch._id === e.target.value
     );
     setSelectedBranch(filteredBranch[0]);
+    dispatch(setBranch(value._id));
   };
 
   const deleteLS = (id) => {

@@ -7,6 +7,7 @@ import {
   fetchRateMaster,
   fetchRateMasters,
   modifyRateMaster,
+  removeRateMaster,
 } from "./rateMasterActions";
 const initialState = {
   status: "idle",
@@ -66,6 +67,14 @@ export const getCustomersForRateMaster = createAsyncThunk(
   }
 );
 
+export const deleteRateMaster = createAsyncThunk(
+  "DELETE_RATE_MASTER",
+  async (requestObject) => {
+    const { data, status } = await removeRateMaster(requestObject);
+    return { data, status };
+  }
+);
+
 export const rateMasterSlice = createSlice({
   name: "rateMaster",
   initialState,
@@ -106,6 +115,16 @@ export const rateMasterSlice = createSlice({
         state.status = "failed";
       })
 
+      .addCase(deleteRateMaster.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(deleteRateMaster.fulfilled, (state) => {
+        state.status = "succeeded";
+      })
+      .addCase(deleteRateMaster.rejected, (state) => {
+        state.status = "failed";
+      })
+
       .addCase(getPlaces.pending, (state) => {
         state.status = "loading";
       })
@@ -133,16 +152,6 @@ export const rateMasterSlice = createSlice({
         state.status = "succeeded";
       })
       .addCase(getArticles.rejected, (state) => {
-        state.status = "failed";
-      })
-
-      .addCase(getCustomersForRateMaster.pending, (state) => {
-        state.status = "loading";
-      })
-      .addCase(getCustomersForRateMaster.fulfilled, (state) => {
-        state.status = "succeeded";
-      })
-      .addCase(getCustomersForRateMaster.rejected, (state) => {
         state.status = "failed";
       });
   },
