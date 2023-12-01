@@ -41,8 +41,10 @@ import {
   downloadBill,
   selectIsLoading,
   setSearch as onSearch,
+  getCustomers,
 } from "./slice/billSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const BillList = () => {
   const columns = [
@@ -116,9 +118,11 @@ const BillList = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -176,6 +180,7 @@ const BillList = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
+    dispatch(getCustomers());
   }, []);
 
   const fetchData = () => {
@@ -275,6 +280,7 @@ const BillList = () => {
 
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
+    dispatch(setBranch(value._id));
   };
 
   const deleteBill = (id) => {

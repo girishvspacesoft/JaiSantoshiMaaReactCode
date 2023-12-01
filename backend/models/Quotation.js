@@ -40,6 +40,12 @@ const Quotation = new Schema(
     customer: {
       type: String,
     },
+    customerId: {
+      type: String,
+    },
+    branch: {
+      type: String,
+    },
     stations: [],
     active: {
       type: Boolean,

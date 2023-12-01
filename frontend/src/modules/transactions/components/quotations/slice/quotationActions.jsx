@@ -5,6 +5,15 @@ export function fetchPlaces() {
   const url = `api/master/getPlaces`;
   return fetchFromApiServer("GET", url);
 }
+export function fetchBranches() {
+  const url = `api/master/getBranches`;
+  return fetchFromApiServer("GET", url);
+}
+
+export function fetchCustomers(data) {
+  const url = `api/master/getCustomersForDrop`;
+  return fetchFromApiServer("POST", url, { search: data });
+}
 
 export function addQuotation(requestObject) {
   requestObject.createdBy = getEmpId();
@@ -22,9 +31,9 @@ export function modifyQuotation(requestObject) {
   return fetchFromApiServer("POST", url, requestObject);
 }
 
-export function fetchQuotations() {
+export function fetchQuotations(branch) {
   const url = `api/transactions/getQuotations`;
-  return fetchFromApiServer("GET", url, {});
+  return fetchFromApiServer("GET", url, {}, { branch });
 }
 
 export function removeQuotation(id) {

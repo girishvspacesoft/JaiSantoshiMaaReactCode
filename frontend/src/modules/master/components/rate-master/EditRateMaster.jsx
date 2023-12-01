@@ -119,13 +119,13 @@ const EditRateMaster = () => {
               const rates = payload?.data.rates?.map?.((rate) => {
                 const station = places?.find?.(
                   (place) =>
-                    place._id === rate.station ||
-                    place.name === rate.stationName
+                    place._id === rate?.station ||
+                    place.name === rate?.stationName
                 );
                 return {
                   ...rate,
-                  station: station || rate.station,
-                  stationName: station?.name || rate.stationName,
+                  station: station || rate?.station,
+                  stationName: station?.name || rate?.stationName,
                 };
               });
               return {

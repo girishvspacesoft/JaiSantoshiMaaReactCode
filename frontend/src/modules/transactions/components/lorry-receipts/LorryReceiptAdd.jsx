@@ -20,7 +20,7 @@ import { Dialog, LoadingSpinner } from "../../../../ui-controls";
 import TransactionDetails from "./TransactionDetails";
 import {
   base64ToObjectURL,
-  emailRegEx,
+  // emailRegEx,
   validateNumber,
   validatePhoneNumber,
 } from "../../../../services/utils";
@@ -34,7 +34,6 @@ import {
 } from "../../../../services/constants";
 import {
   createLorryReceipt,
-  downloadLorryReceipt,
   getCustomers,
   selectIsLoading,
 } from "./slice/lorryReceiptSlice";
@@ -161,13 +160,14 @@ const initialErrorState = {
 const LorryReceiptAdd = () => {
   const isLoading = useSelector(selectIsLoading);
   const user = useSelector((state) => state.user);
-  const { articles, customers, branches, places } = useSelector(
+  const { articles, customers, branches } = useSelector(
     ({ lorryreceipt }) => lorryreceipt
   );
   const { state } = useLocation();
   const [lorryReceipt, setLorryReceipt] = useState({
     ...initialState,
     branch: state,
+    collectAt: state,
     deliveryType: DELIVERY_TYPES[0] || null,
   });
   const [formErrors, setFormErrors] = useState(initialErrorState);
@@ -181,18 +181,6 @@ const LorryReceiptAdd = () => {
   const goToLorryReceipts = useCallback(() => {
     navigate("/transactions/lorryReceipts");
   }, [navigate]);
-
-  useEffect(() => {
-    const collectAt = places?.find?.(({ _id }) => _id === state?.place);
-    if (state?._id) {
-      setLorryReceipt((currState) => {
-        return {
-          ...currState,
-          collectAt,
-        };
-      });
-    }
-  }, [branches]);
 
   useEffect(() => {
     const err = Object.keys(formErrors);
@@ -278,7 +266,6 @@ const LorryReceiptAdd = () => {
 
   const handleClose = () => {
     setOpen(false);
-    goToLorryReceipts();
   };
   const submitHandler = (e, isSaveAndPrint, isWithoutAmount = false) => {
     e.preventDefault();
@@ -296,7 +283,7 @@ const LorryReceiptAdd = () => {
         updatedLR.toBilled = updatedLR.toBilled.value;
       }
       if (updatedLR.collectAt) {
-        updatedLR.collectAt = updatedLR.collectAt.value;
+        updatedLR.collectAt = updatedLR.collectAt._id;
       }
       if (updatedLR.serviceTaxBy?.value) {
         updatedLR.serviceTaxBy = updatedLR.serviceTaxBy?.value;
@@ -388,24 +375,24 @@ const LorryReceiptAdd = () => {
     if (!formData.consignor && !formData.consignorName?.trim?.()) {
       errors.consignor = { invalid: true, message: "Consignor is required" };
     }
-    if (!formData.consignorAddress) {
-      errors.consignorAddress = {
-        invalid: true,
-        message: "Consignor address is required",
-      };
-    }
+    // if (!formData.consignorAddress) {
+    //   errors.consignorAddress = {
+    //     invalid: true,
+    //     message: "Consignor address is required",
+    //   };
+    // }
     if (!formData.from?.trim?.()) {
       errors.from = { invalid: true, message: "From is required" };
     }
     if (!formData.consignee && !formData.consigneeName?.trim?.()) {
       errors.consignee = { invalid: true, message: "Consignee is required" };
     }
-    if (!formData.consigneeAddress) {
-      errors.consigneeAddress = {
-        invalid: true,
-        message: "Consignee address is required",
-      };
-    }
+    // if (!formData.consigneeAddress) {
+    //   errors.consigneeAddress = {
+    //     invalid: true,
+    //     message: "Consignee address is required",
+    //   };
+    // }
     if (!formData.to?.trim?.()) {
       errors.to = { invalid: true, message: "To is required" };
     }
@@ -432,19 +419,19 @@ const LorryReceiptAdd = () => {
         message: "Payment type is required",
       };
     }
-    if (
-      formData.consigneeEmail?.trim?.() &&
-      !emailRegEx.test(formData.consigneeEmail)
-    ) {
-      errors.consigneeEmail = { invalid: true, message: "Email is invalid" };
-    }
+    // if (
+    //   formData.consigneeEmail?.trim?.() &&
+    //   !emailRegEx.test(formData.consigneeEmail)
+    // ) {
+    //   errors.consigneeEmail = { invalid: true, message: "Email is invalid" };
+    // }
 
-    if (
-      formData.consignorEmail?.trim?.() &&
-      !emailRegEx.test(formData.consignorEmail)
-    ) {
-      errors.consignorEmail = { invalid: true, message: "Email is invalid" };
-    }
+    // if (
+    //   formData.consignorEmail?.trim?.() &&
+    //   !emailRegEx.test(formData.consignorEmail)
+    // ) {
+    //   errors.consignorEmail = { invalid: true, message: "Email is invalid" };
+    // }
     if (!formData.payMode && formData.payType === "Paid") {
       errors.payMode = {
         invalid: true,
@@ -530,7 +517,7 @@ const LorryReceiptAdd = () => {
 
   const fetchCustomers = (str) => {
     const search = str.trim?.();
-    if (search?.length > 4) {
+    if (search?.length > 2) {
       dispatch(getCustomers(search));
     } else if (!search) {
       dispatch(getCustomers());
@@ -542,6 +529,7 @@ const LorryReceiptAdd = () => {
       return {
         ...currState,
         consignorName: target.value,
+        consignor: null,
       };
     });
     fetchCustomers(target.value);
@@ -582,6 +570,7 @@ const LorryReceiptAdd = () => {
       return {
         ...currState,
         consigneeName: target.value,
+        consignee: null,
       };
     });
     fetchCustomers(target.value);
@@ -593,7 +582,14 @@ const LorryReceiptAdd = () => {
         [name]: option,
         ...(name === "branch"
           ? {
-              collectAt: places?.find?.(({ _id }) => _id === option?.place),
+              collectAt: option,
+            }
+          : {}),
+        ...(name === "toBilled"
+          ? {
+              serviceTaxBy:
+                SERVICE_TAX_BY.find(({ value }) => option.value === value) ||
+                null,
             }
           : {}),
       };
@@ -759,7 +755,7 @@ const LorryReceiptAdd = () => {
                 >
                   <Autocomplete
                     id="consignor"
-                    freeSolo
+                    freeSolo={!!lorryReceipt.consignorName}
                     autoSelect
                     size="small"
                     name="consignor"
@@ -832,7 +828,7 @@ const LorryReceiptAdd = () => {
                   )}
                 </FormControl>
               </div>
-              <div className="grid-item">
+              {/* <div className="grid-item">
                 <FormControl
                   fullWidth
                   error={formErrors.consignorEmail.invalid}
@@ -854,7 +850,7 @@ const LorryReceiptAdd = () => {
                     </FormHelperText>
                   )}
                 </FormControl>
-              </div>
+              </div> */}
               <div className="grid-item">
                 <FormControl fullWidth error={formErrors.from.invalid}>
                   <TextField
@@ -874,6 +870,7 @@ const LorryReceiptAdd = () => {
                 </FormControl>
               </div>
               <div className="grid-item"></div>
+              <div className="grid-item"></div>
               <div className="grid-item">
                 <FormControl
                   fullWidth
@@ -882,7 +879,7 @@ const LorryReceiptAdd = () => {
                 >
                   <Autocomplete
                     id="consignee"
-                    freeSolo
+                    freeSolo={!!lorryReceipt.consigneeName}
                     autoSelect
                     size="small"
                     name="consignee"
@@ -955,7 +952,7 @@ const LorryReceiptAdd = () => {
                   )}
                 </FormControl>
               </div>
-              <div className="grid-item">
+              {/* <div className="grid-item">
                 <FormControl
                   fullWidth
                   error={formErrors.consigneeEmail.invalid}
@@ -977,7 +974,7 @@ const LorryReceiptAdd = () => {
                     </FormHelperText>
                   )}
                 </FormControl>
-              </div>
+              </div> */}
               <div className="grid-item">
                 <FormControl fullWidth error={formErrors.to.invalid}>
                   <TextField
@@ -1238,17 +1235,15 @@ const LorryReceiptAdd = () => {
                 <FormControl fullWidth size="small">
                   <Autocomplete
                     id="collectAt"
-                    disablePortal
-                    autoSelect
-                    autoHighlight={true}
                     size="small"
                     name="collectAt"
-                    options={places}
+                    options={branches}
                     value={lorryReceipt.collectAt}
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "collectAt")
                     }
-                    openOnFocus
+                    disabled
+                    getOptionLabel={(branch) => branch.name || ""}
                     renderInput={(params) => (
                       <TextField
                         {...params}

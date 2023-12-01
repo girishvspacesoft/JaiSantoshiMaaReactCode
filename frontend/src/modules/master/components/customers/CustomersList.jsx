@@ -1,17 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Autocomplete,
   Button,
-  debounce,
   InputAdornment,
   Snackbar,
   TextField,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import {
-  DataGrid,
-  GridToolbarContainer,
-  useGridApiRef,
-} from "@mui/x-data-grid";
+import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 import { Alert, Stack } from "@mui/material";
 import { IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -26,7 +22,16 @@ import {
   setSearch,
 } from "./slice/customerSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
+const options = [
+  { label: "All", value: "" },
+  { label: "Name", value: "name" },
+  { label: "Address", value: "address" },
+  { label: "Email", value: "email" },
+  { label: "City", value: "city" },
+  { label: "Telephone", value: "telephone" },
+];
 const CustomersList = () => {
   const columns = [
     { field: "_id", headerName: "Id" },
@@ -57,25 +62,25 @@ const CustomersList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
     },
   ];
   const dispatch = useDispatch();
-  const apiRef = useGridApiRef();
   const { search } = useSelector(({ customer }) => customer);
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
   const [httpError, setHttpError] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUnauth, setIsUnauth] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const isLoading = useSelector(selectIsLoading);
-  const [isloading, setLoading] = useState(false);
+  const [searchType, setSearchType] = useState({ label: "All", value: "" });
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 100,
@@ -93,6 +98,8 @@ const CustomersList = () => {
           limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
           page: paginationModel.page + 1,
         },
+        search,
+        searchType: searchType?.value,
       })
     )
       .then(({ payload = {} }) => {
@@ -120,28 +127,11 @@ const CustomersList = () => {
 
   useEffect(() => {
     fetchData();
-  }, [paginationModel]);
-  const updateSearchValue = useMemo(() => {
-    return debounce((newValue) => {
-      apiRef.current.setQuickFilterValues(
-        newValue.split?.(" ")?.filter?.((word) => word !== "")
-      );
-    }, 500);
-  }, [apiRef]);
-
-  useEffect(() => {
-    if (search && pageState.data?.length) {
-      setLoading(true);
-      updateSearchValue(search);
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
-    }
-  }, [pageState.data]);
+  }, [paginationModel, searchType, search]);
 
   const onSearchChange = (e) => {
-    updateSearchValue(e.target.value);
     dispatch(setSearch(e.target.value));
+    setPaginationModel((prevState) => ({ ...prevState, page: 0 }));
   };
   const handleAddCustomer = () => {
     navigate("/master/customers/addCustomer");
@@ -185,9 +175,13 @@ const CustomersList = () => {
     setIsUnauth(false);
   };
 
+  const autocompleteChangeListener = (e, value) => {
+    setSearchType(value);
+  };
+
   return (
     <>
-      {(isLoading || isloading) && <LoadingSpinner />}
+      {isLoading && <LoadingSpinner />}
 
       {isDialogOpen && (
         <Dialog
@@ -242,7 +236,6 @@ const CustomersList = () => {
 
         <div style={{ width: "100%" }}>
           <DataGrid
-            apiRef={apiRef}
             autoHeight
             density="compact"
             rows={pageState.data}
@@ -277,12 +270,27 @@ const CustomersList = () => {
                     border: "none",
                   }}
                 >
+                  <Autocomplete
+                    size="small"
+                    name="filter"
+                    options={options}
+                    value={searchType || null}
+                    onChange={(e, value) =>
+                      autocompleteChangeListener(e, value)
+                    }
+                    style={{ width: "200px" }}
+                    openOnFocus
+                    renderInput={(params) => (
+                      <TextField {...params} label="Type" fullWidth />
+                    )}
+                  />
                   <TextField
                     variant="standard"
                     placeholder="Search..."
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

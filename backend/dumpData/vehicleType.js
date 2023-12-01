@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const { db } = require("../database/db");
 const csv = require("csvtojson");
-const Article = require("../models/Article");
+const VehicleType = require("../models/VehicleType");
 
 mongoose.Promise = global.Promise;
 
@@ -15,21 +15,21 @@ async function init() {
   });
 
   try {
-    await Article.deleteMany({});
-    console.log("Removed existing Articles");
-    const filePath = path.resolve(process.cwd(), "dumpData", "article.csv");
+    await VehicleType.deleteMany({});
+    console.log("Removed existing VehicleTypes");
+    const filePath = path.resolve(process.cwd(), "dumpData", "vehicleType.csv");
     const data = await csv().fromFile(filePath);
     console.log(data.length + " records");
-    await Article.insertMany(data, {
+    await VehicleType.insertMany(data, {
       ordered: false,
       silent: true,
     });
-    console.log("Finished creating Articles");
+    console.log("Finished creating VehicleTypes");
     mongoose.connection.close();
     console.log("Database connection closed");
     process.exit();
   } catch (e) {
-    console.log(e.message);
+    console.log(e);
     process.exit();
   }
 }

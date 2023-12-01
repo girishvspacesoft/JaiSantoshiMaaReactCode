@@ -121,16 +121,11 @@ export const billSlice = createSlice({
         state.status = "failed";
       })
 
-      .addCase(getCustomers.pending, (state) => {
-        state.status = "loading";
-      })
+      .addCase(getCustomers.pending, (state) => {})
       .addCase(getCustomers.fulfilled, (state, { payload }) => {
-        // state.status = "succeeded";
         state.customers = payload?.data;
       })
-      .addCase(getCustomers.rejected, (state) => {
-        state.status = "failed";
-      })
+      .addCase(getCustomers.rejected, (state) => {})
 
       .addCase(createBill.pending, (state) => {
         state.status = "loading";
@@ -166,7 +161,7 @@ export const billSlice = createSlice({
         state.status = "loading";
       })
       .addCase(getBill.fulfilled, (state) => {
-        // state.status = "succeeded";
+        state.status = "succeeded";
       })
       .addCase(getBill.rejected, (state) => {
         state.status = "failed";

@@ -144,8 +144,9 @@ export const getNextLRNumber = (lr, selectedBranch) => {
   return branchInitial + "-" + newNum;
 };
 
-export const getFormattedLSNumber = (lsNo) => {
-  lsNo = lsNo.toString?.();
+export const getFormattedLSNumber = (lsNo = "") => {
+  if (!lsNo) return "";
+  lsNo = lsNo?.toString?.();
   while (lsNo?.length < 6) lsNo = "0" + lsNo;
   return lsNo;
 };
@@ -179,6 +180,9 @@ export const getNextDriverNo = (driver) => {
   if (driver && driver.code) {
     const parts = driver.code.split?.("/");
     const num = +parts[2]?.replace?.("DRV-", "");
+    if (parts?.length < 2) {
+      return `DTP/${new Date().getFullYear()}/DRV-${+parts[0] + 1}`;
+    }
     return `DTP/${new Date().getFullYear()}/DRV-${num + 1}`;
   }
   if (!driver || !driver.code) {
@@ -227,7 +231,7 @@ export const base64ToObjectURL = (base64) => {
 export const downloadFile = (fileURL, fileName) => {
   const link = document.createElement("a");
   link.href = fileURL;
-  link.download = fileName;
+  link.download = "JSMT-" + fileName;
   document.body.append(link);
   link.click();
   link.remove();
@@ -249,4 +253,10 @@ export const validateNumber = (e) => {
 export const validatePhoneNumber = (e) => {
   const value = e.target.value?.slice?.(0, 10)?.replace?.(/[^0-9]/g, "");
   e.target.value = value;
+};
+
+export const validateAlphaNumeric = (e, length = 50) => {
+  return (e.target.value = e.target.value
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, length));
 };

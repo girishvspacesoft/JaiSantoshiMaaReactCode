@@ -27,6 +27,7 @@ import {
   selectIsLoading,
   setSearch,
 } from "./slice/articleSlice";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const ArticlesList = () => {
   const columns = [
@@ -55,9 +56,11 @@ const ArticlesList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -254,6 +257,7 @@ const ArticlesList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

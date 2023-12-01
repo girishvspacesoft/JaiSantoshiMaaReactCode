@@ -9,15 +9,18 @@ import {
 import { Alert, Stack } from "@mui/material";
 import { IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import { LoadingSpinner } from "../../../../ui-controls";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Dialog, LoadingSpinner } from "../../../../ui-controls";
 import { checkAuth } from "../../../../router/RequireAuth";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getRateMasters,
   selectIsLoading,
   setSearch,
+  deleteRateMaster as removeRateMaster,
 } from "./slice/rateMasterSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const RateMasterList = () => {
   const columns = [
@@ -34,11 +37,21 @@ const RateMasterList = () => {
           return navigateToEdit(params.row._id);
         };
 
+        const triggerDelete = (e) => {
+          e.stopPropagation();
+          return deleteRateMaster(params.row._id);
+        };
         return (
           <>
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
+            &nbsp;&nbsp;
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -51,6 +64,9 @@ const RateMasterList = () => {
   const [httpError, setHttpError] = useState("");
   const isLoading = useSelector(selectIsLoading);
   const [isloading, setLoading] = useState(false);
+  const [selectedId, setSelectedId] = useState("");
+  const [isUnauth, setIsUnauth] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -62,7 +78,7 @@ const RateMasterList = () => {
     total: 0,
   });
 
-  useEffect(() => {
+  const fetchData = () => {
     dispatch(
       getRateMasters({
         pagination: {
@@ -92,6 +108,10 @@ const RateMasterList = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [paginationModel]);
 
   const updateSearchValue = useMemo(() => {
@@ -129,6 +149,32 @@ const RateMasterList = () => {
     }
   };
 
+  const deleteRateMaster = (id) => {
+    if (checkAuth("Admin", "RateMaster", "write")) {
+      setSelectedId(id);
+      setIsDialogOpen(true);
+    } else {
+      setIsUnauth(true);
+    }
+  };
+
+  const handleDialogClose = (e) => {
+    if (e.target.value === "true") {
+      dispatch(removeRateMaster(selectedId))
+        .then(() => {
+          fetchData();
+          setIsDialogOpen(false);
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
+    } else {
+      setIsDialogOpen(false);
+    }
+  };
+
   return (
     <>
       {(isLoading || isloading) && <LoadingSpinner />}
@@ -159,7 +205,14 @@ const RateMasterList = () => {
             </Button>
           </div>
         </div>
-
+        {isDialogOpen && (
+          <Dialog
+            isOpen={true}
+            onClose={handleDialogClose}
+            title="Are you sure?"
+            content="Do you want to delete the rate master?"
+          />
+        )}
         {httpError !== "" && (
           <Stack
             sx={{
@@ -217,6 +270,7 @@ const RateMasterList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

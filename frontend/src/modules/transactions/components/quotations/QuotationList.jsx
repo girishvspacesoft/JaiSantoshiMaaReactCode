@@ -14,6 +14,8 @@ import {
   debounce,
   TextField,
   InputAdornment,
+  FormControl,
+  Autocomplete,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -32,6 +34,7 @@ import {
   base64ToObjectURL,
   downloadFile,
   pad,
+  isSuperAdminOrAdmin,
 } from "../../../../services/utils";
 import {
   getQuotations,
@@ -40,8 +43,11 @@ import {
   selectIsLoading,
   getPlaces,
   setSearch,
+  getBranches,
+  getCustomers,
 } from "./slice/quotationSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const QuotationList = () => {
   const columns = [
@@ -109,9 +115,11 @@ const QuotationList = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -121,7 +129,7 @@ const QuotationList = () => {
   const apiRef = useGridApiRef();
   const navigate = useNavigate();
   const isLoading = useSelector(selectIsLoading);
-  const { search } = useSelector(({ quotation }) => quotation);
+  const { search, branches } = useSelector(({ quotation }) => quotation);
   const [quotations, setQuotations] = useState([]);
   const [httpError, setHttpError] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -132,25 +140,58 @@ const QuotationList = () => {
   const [emailAddress, setEmailAddress] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [isloading, setLoading] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const user = useSelector((state) => state.user);
 
   const fetchData = () => {
-    dispatch(getQuotations())
+    if (selectedBranch) {
+      dispatch(getQuotations(selectedBranch?._id))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            setHttpError("");
+            setQuotations(
+              payload?.data?.map?.((quot) => ({
+                ...quot,
+                date: getFormattedDate(new Date(quot.date)),
+                quotationNo: getFormattedLSNumber(quot.quotationNo),
+                customer: quot.customer?.name
+                  ? quot.customer.name
+                  : quot.customer,
+              }))
+            );
+          }
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedBranch]);
+
+  useEffect(() => {
+    dispatch(getPlaces());
+    dispatch(getCustomers());
+    dispatch(getBranches())
       .then(({ payload = {} }) => {
         const { message } = payload?.data || {};
         if (message) {
           setHttpError(message);
         } else {
           setHttpError("");
-          setQuotations(
-            payload?.data?.map?.((quot) => ({
-              ...quot,
-              date: getFormattedDate(new Date(quot.date)),
-              quotationNo: getFormattedLSNumber(quot.quotationNo),
-              customer: quot.customer?.name
-                ? quot.customer.name
-                : quot.customer,
-            }))
-          );
+          if (payload?.data?.length) {
+            const filteredBranch = payload?.data?.find?.(
+              (branch) => branch._id === user.branch
+            );
+            setSelectedBranch(filteredBranch);
+          }
         }
       })
       .catch(() => {
@@ -158,10 +199,6 @@ const QuotationList = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
-  };
-  useEffect(() => {
-    fetchData();
-    dispatch(getPlaces());
   }, []);
 
   const updateSearchValue = useMemo(() => {
@@ -220,6 +257,10 @@ const QuotationList = () => {
     setSelectedId(id);
     setIsDialogOpen(true);
   };
+  const branchChangeHandler = (e, value) => {
+    setSelectedBranch(value);
+    dispatch(setBranch(value._id));
+  };
 
   const handleDialogClose = (e) => {
     if (e.target.value === "true") {
@@ -242,7 +283,9 @@ const QuotationList = () => {
   };
 
   const handleAddQuotation = () => {
-    navigate("/transactions/quotations/addQuotation");
+    navigate("/transactions/quotations/addQuotation", {
+      state: selectedBranch,
+    });
   };
 
   useEffect(() => {
@@ -288,6 +331,26 @@ const QuotationList = () => {
         <div className="page_head">
           <h1 className="pageHead">Quotations</h1>
           <div className="page_actions">
+            <FormControl
+              size="small"
+              sx={{ width: "230px", marginRight: "5px" }}
+            >
+              <Autocomplete
+                disablePortal
+                size="small"
+                name="branch"
+                className="multi-select"
+                options={branches}
+                value={selectedBranch || null}
+                onChange={branchChangeHandler}
+                disabled={!isSuperAdminOrAdmin()}
+                getOptionLabel={(branch) => branch.name}
+                openOnFocus
+                renderInput={(params) => (
+                  <TextField {...params} label="Select branch" fullWidth />
+                )}
+              />
+            </FormControl>
             <Button
               variant="contained"
               size="small"
@@ -348,6 +411,7 @@ const QuotationList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

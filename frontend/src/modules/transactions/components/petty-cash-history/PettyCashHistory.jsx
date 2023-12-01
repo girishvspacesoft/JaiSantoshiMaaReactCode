@@ -32,6 +32,7 @@ import {
   getPettyTransactionsByDate,
   selectIsLoading,
 } from "./slice/pettyCashSlice";
+import { setBranch } from "../../../user/slice/userSlice";
 
 const initialState = {
   startDate: null,
@@ -232,6 +233,7 @@ const PettyCashHistory = () => {
       (branch) => branch._id === e.target.value
     );
     setSelectedBranch(filteredBranch[0]);
+    dispatch(setBranch(e.target.value));
   };
 
   const handleAddPettyTransaction = () => {

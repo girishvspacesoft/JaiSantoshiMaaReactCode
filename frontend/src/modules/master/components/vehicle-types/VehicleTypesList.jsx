@@ -26,6 +26,7 @@ import {
   setSearch,
 } from "./slice/vehicleTypeSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const VehicleTypesList = () => {
   const columns = [
@@ -54,9 +55,11 @@ const VehicleTypesList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -250,6 +253,7 @@ const VehicleTypesList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

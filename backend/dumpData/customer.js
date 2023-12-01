@@ -3,7 +3,7 @@ const path = require("path");
 const { db } = require("../database/db");
 const csv = require("csvtojson");
 const Customer = require("../models/Customer");
-const { groupBy } = require("lodash");
+const { map, find } = require("lodash");
 
 mongoose.Promise = global.Promise;
 
@@ -19,17 +19,22 @@ async function init() {
     await Customer.deleteMany({});
     console.log("Removed existing Customers");
     const filePath = path.resolve(process.cwd(), "dumpData", "customer.csv");
+    const placePath = path.resolve(process.cwd(), "dumpData", "place.csv");
+
     const data = await csv().fromFile(filePath);
-    const mainData = groupBy(data, "name");
-    let customers = [];
-    for (const key in mainData) {
-      if (Object.hasOwnProperty.call(mainData, key)) {
-        const element = mainData[key];
-        customers = [...customers, element[0]];
-      }
-    }
-    console.log(customers.length + " records");
-    await Customer.insertMany(customers, {
+    const places = await csv().fromFile(placePath);
+
+    const list = map(data, (customer) => {
+      const place = find(places, ({ PlaceID }) => PlaceID === customer.PlaceID);
+      return {
+        ...customer,
+        city: place?.name,
+        address: customer?.address || place?.name,
+      };
+    });
+
+    console.log(list.length + " records");
+    await Customer.insertMany(list, {
       ordered: false,
       silent: true,
     });
@@ -38,10 +43,6 @@ async function init() {
     console.log("Database connection closed");
     process.exit();
   } catch (e) {
-    console.log(e);
-    console.log(
-      "eeeeeeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrooooooooooooooooooooorrrrrrrrrrrrrrrrrrrrrr"
-    );
     console.log(e.message);
     process.exit();
   }

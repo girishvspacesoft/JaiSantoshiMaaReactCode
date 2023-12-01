@@ -5,7 +5,7 @@ const LorryReceipt = new Schema(
   {
     branch: {
       type: String,
-      required: true,
+      //required: true,
     },
     lrNo: {
       type: String,
@@ -28,15 +28,18 @@ const LorryReceipt = new Schema(
     },
     consignor: {
       type: String,
-      required: true,
+      //required: true,
     },
     consignorName: {
       type: String,
-      required: true,
+      //required: true,
+    },
+    consignorNameMr: {
+      type: String,
     },
     consignorAddress: {
       type: String,
-      required: true,
+      //required: true,
     },
     consignorPhone: {
       type: String,
@@ -46,11 +49,14 @@ const LorryReceipt = new Schema(
     },
     consignee: {
       type: String,
-      required: true,
+      //required: true,
     },
     consigneeName: {
       type: String,
-      required: true,
+      //required: true,
+    },
+    consigneeNameMr: {
+      type: String,
     },
     consigneeAddress: {
       type: String,
@@ -63,15 +69,21 @@ const LorryReceipt = new Schema(
     },
     from: {
       type: String,
-      required: true,
+      //required: true,
+    },
+    fromMr: {
+      type: String,
     },
     to: {
       type: String,
-      required: true,
+      //required: true,
+    },
+    toMr: {
+      type: String,
     },
     totalFreight: {
       type: Number,
-      required: true,
+      //required: true,
     },
     hamali: {
       type: Number,
@@ -81,11 +93,11 @@ const LorryReceipt = new Schema(
     },
     lrCharges: {
       type: Number,
-      required: true,
+      //required: true,
     },
     total: {
       type: Number,
-      required: true,
+      //required: true,
     },
     materialCost: {
       type: Number,
@@ -117,6 +129,9 @@ const LorryReceipt = new Schema(
     chequeNo: {
       type: String,
     },
+    memoNo: {
+      type: String,
+    },
     chequeDate: {
       type: String,
     },
@@ -132,11 +147,11 @@ const LorryReceipt = new Schema(
       {
         article: {
           type: String,
-          required: true,
+          //required: true,
         },
         articleNo: {
           type: Number,
-          required: true,
+          //required: true,
         },
         description: {
           type: String,
@@ -155,7 +170,7 @@ const LorryReceipt = new Schema(
         },
         freight: {
           type: Number,
-          required: true,
+          //required: true,
         },
         foNum: {
           type: Number,

@@ -26,6 +26,7 @@ import {
   setSearch,
 } from "./slice/bankSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const BankList = () => {
   const columns = [
@@ -59,9 +60,11 @@ const BankList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -256,6 +259,7 @@ const BankList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

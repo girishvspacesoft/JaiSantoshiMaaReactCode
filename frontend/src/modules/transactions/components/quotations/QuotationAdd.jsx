@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   IconButton,
   TextField,
@@ -10,6 +10,7 @@ import {
   Paper,
   Divider,
   InputAdornment,
+  Autocomplete,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -26,13 +27,19 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LoadingSpinner } from "../../../../ui-controls";
 import Stations from "./Stations";
-import { createQuotation, selectIsLoading } from "./slice/quotationSlice";
+import {
+  createQuotation,
+  getCustomers,
+  selectIsLoading,
+} from "./slice/quotationSlice";
 import { validateNumber } from "../../../../services/utils";
 
 const initialState = {
   date: new Date(),
   customer: "",
+  customerId: null,
   from: null,
+  branch: null,
   to: null,
   otherField: "",
   field1: "",
@@ -45,6 +52,10 @@ const initialState = {
 };
 
 const initialErrorState = {
+  branch: {
+    invalid: false,
+    message: "",
+  },
   date: {
     invalid: false,
     message: "",
@@ -73,10 +84,16 @@ const initialErrorState = {
 
 const QuotationAdd = () => {
   const isLoading = useSelector(selectIsLoading);
-  const [quotation, setQuotation] = useState(initialState);
+  const { state } = useLocation();
+  const [quotation, setQuotation] = useState({
+    ...initialState,
+    branch: state,
+  });
   const [formErrors, setFormErrors] = useState(initialErrorState);
   const [httpError, setHttpError] = useState("");
-  const { places } = useSelector(({ quotation }) => quotation) || {};
+  const { places, branches, customers } =
+    useSelector(({ quotation }) => quotation) || {};
+  const user = useSelector((state) => state.user);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -109,6 +126,12 @@ const QuotationAdd = () => {
   const submitHandler = (e) => {
     e.preventDefault();
     if (!validateForm(quotation)) {
+      if (quotation.branch) {
+        quotation.branch = quotation.branch?._id;
+      }
+      if (quotation.customerId) {
+        quotation.customerId = quotation.customerId?._id;
+      }
       dispatch(createQuotation(quotation))
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
@@ -129,6 +152,9 @@ const QuotationAdd = () => {
 
   const validateForm = (formData) => {
     const errors = { ...initialErrorState };
+    if (!formData.branch) {
+      errors.branch = { invalid: true, message: "Branch is required" };
+    }
     if (!formData.date) {
       errors.date = { invalid: true, message: "Date is required" };
     }
@@ -172,6 +198,57 @@ const QuotationAdd = () => {
     });
   };
 
+  const autocompleteChangeListener = (e, option, name) => {
+    setQuotation((currState) => {
+      return {
+        ...currState,
+        [name]: option,
+      };
+    });
+  };
+
+  const consigneeChangeHandler = (e, value) => {
+    if (value) {
+      if (typeof value === "object") {
+        setQuotation((currState) => {
+          return {
+            ...currState,
+            customerId: value,
+            customer: value.label,
+          };
+        });
+      }
+    } else {
+      setQuotation((currState) => {
+        return {
+          ...currState,
+          customerId: null,
+          customer: "",
+        };
+      });
+    }
+  };
+
+  const consigneeChange = ({ target }) => {
+    setQuotation((currState) => {
+      return {
+        ...currState,
+        customer: target.value,
+        customerId: null,
+      };
+    });
+    fetchCustomers(target.value);
+  };
+
+  const fetchCustomers = (str) => {
+    const search = str.trim?.();
+    if (search?.length > 2) {
+      dispatch(getCustomers(search));
+    } else if (!search) {
+      dispatch(getCustomers());
+    }
+  };
+
   const stationDeleteHandler = (e, index) => {
     e.preventDefault();
     if (quotation.stations?.length) {
@@ -208,6 +285,44 @@ const QuotationAdd = () => {
           <form action="" onSubmit={submitHandler} id="quotationForm">
             <div className="grid grid-6-col">
               <div className="grid-item">
+                <FormControl
+                  fullWidth
+                  size="small"
+                  error={formErrors.branch.invalid}
+                >
+                  <Autocomplete
+                    disablePortal
+                    size="small"
+                    name="branch"
+                    options={branches}
+                    value={quotation.branch}
+                    onChange={(e, value) =>
+                      autocompleteChangeListener(e, value, "branch")
+                    }
+                    getOptionLabel={(branch) => branch.name || ""}
+                    openOnFocus
+                    disabled={
+                      user &&
+                      user.type &&
+                      user.type?.toLowerCase?.() !== "superadmin" &&
+                      user.type?.toLowerCase?.() !== "admin"
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Branch"
+                        name="branch"
+                        error={formErrors.branch.invalid}
+                        fullWidth
+                      />
+                    )}
+                  />
+                  {formErrors.branch.invalid && (
+                    <FormHelperText>{formErrors.branch.message}</FormHelperText>
+                  )}
+                </FormControl>
+              </div>
+              <div className="grid-item">
                 <FormControl fullWidth error={formErrors.date.invalid}>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -238,15 +353,25 @@ const QuotationAdd = () => {
                   size="small"
                   error={formErrors.customer.invalid}
                 >
-                  <TextField
+                  <Autocomplete
+                    id="customerId"
+                    autoSelect
                     size="small"
-                    variant="outlined"
-                    label="Customer"
-                    error={formErrors.customer.invalid}
-                    value={quotation.customer}
-                    onChange={inputChangeHandler}
-                    name="customer"
-                    id="customer"
+                    name="customerId"
+                    options={customers}
+                    value={quotation.customerId}
+                    onChange={(e, value) => consigneeChangeHandler(e, value)}
+                    openOnFocus
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Customer"
+                        name="customerId"
+                        onChange={(e) => consigneeChange(e)}
+                        error={formErrors.customer.invalid}
+                        fullWidth
+                      />
+                    )}
                   />
 
                   {formErrors.customer.invalid && (

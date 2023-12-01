@@ -26,6 +26,7 @@ import {
   setSearch,
 } from "./slice/driverSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const DriversList = () => {
   const columns = [
@@ -54,9 +55,11 @@ const DriversList = () => {
               <EditIcon />
             </IconButton>
             &nbsp;&nbsp;
-            <IconButton size="small" onClick={triggerDelete} color="error">
-              <DeleteIcon />
-            </IconButton>
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -247,6 +250,7 @@ const DriversList = () => {
                     autoFocus={!!search}
                     onChange={onSearchChange}
                     value={search}
+                    style={{ width: "300px" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

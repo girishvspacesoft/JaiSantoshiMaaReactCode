@@ -134,6 +134,9 @@ export const userSlice = createSlice({
     setSearch: (state, { payload }) => {
       state.search = payload;
     },
+    setBranch: (state, { payload }) => {
+      state.branch = payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -259,6 +262,7 @@ export const userSlice = createSlice({
   },
 });
 
-export const { updateUser, removeUser, setSearch } = userSlice.actions;
+export const { updateUser, removeUser, setSearch, setBranch } =
+  userSlice.actions;
 export default userSlice.reducer;
 export const selectIsLoading = (state) => state.user.status === "loading";

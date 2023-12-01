@@ -34,9 +34,9 @@ import {
   isSuperAdminOrAdmin,
 } from "../../../../services/utils";
 import {
+  deleteLoadingSlip,
   downloadLoadingSlip,
   getBranches,
-  getCustomers,
   getDrivers,
   getLoadingSlips,
   getPlaces,
@@ -46,6 +46,8 @@ import {
   setSearch as onSearch,
 } from "./slice/loadingSlipSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import { setBranch } from "../../../user/slice/userSlice";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const LoadingSlips = () => {
   const columns = [
@@ -106,6 +108,10 @@ const LoadingSlips = () => {
           return navigateToEdit(params.row._id);
         };
 
+        const triggerDelete = (e) => {
+          e.stopPropagation();
+          return removeLoadingSlip(params.row._id);
+        };
         return (
           <>
             <IconButton size="small" onClick={triggerDownload} color="primary">
@@ -120,7 +126,11 @@ const LoadingSlips = () => {
             <IconButton size="small" onClick={triggerEdit} color="primary">
               <EditIcon />
             </IconButton>
-            {/* <IconButton size='small' onClick={triggerDelete} color='error'><DeleteIcon /></IconButton> */}
+            {isSuperAdminOrAdmin() ? (
+              <IconButton size="small" onClick={triggerDelete} color="error">
+                <DeleteIcon />
+              </IconButton>
+            ) : null}
           </>
         );
       },
@@ -185,7 +195,6 @@ const LoadingSlips = () => {
           "Something went wrong! Please try later or contact Administrator."
         );
       });
-    dispatch(getCustomers());
     dispatch(getVehicles());
     dispatch(getSuppliers());
     dispatch(getPlaces());
@@ -310,12 +319,28 @@ const LoadingSlips = () => {
 
   const branchChangeHandler = (e, value) => {
     setSelectedBranch(value);
+    dispatch(setBranch(value._id));
   };
 
   const handleDialogClose = (e) => {
     setIsDialogOpen(true);
     if (e.target.value === "true") {
       setDeleteLSId(selectedId);
+      dispatch(deleteLoadingSlip(selectedId))
+        .then(({ payload = {} }) => {
+          const { message } = payload?.data || {};
+          if (message) {
+            setHttpError(message);
+          } else {
+            fetchData();
+          }
+          setIsDialogOpen(false);
+        })
+        .catch(() => {
+          setHttpError(
+            "Something went wrong! Please try later or contact Administrator."
+          );
+        });
     } else {
       setDeleteLSId("");
       setSelectedId("");
@@ -333,6 +358,10 @@ const LoadingSlips = () => {
     navigate("/transactions/loadingSlips/editLoadingSlip", {
       state: { lsId: id },
     });
+  };
+  const removeLoadingSlip = (id) => {
+    setSelectedId(id);
+    setIsDialogOpen(true);
   };
 
   return (
