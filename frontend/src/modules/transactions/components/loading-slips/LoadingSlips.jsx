@@ -1,11 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  DataGrid,
-  GridToolbarContainer,
-  useGridApiRef,
-} from "@mui/x-data-grid";
+import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 import {
   IconButton,
   Alert,
@@ -14,7 +10,6 @@ import {
   Button,
   TextField,
   InputAdornment,
-  debounce,
   Autocomplete,
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
@@ -155,9 +150,7 @@ const LoadingSlips = () => {
   const [sendEmail, setSendEmail] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [selectedLS, setSelectedLS] = useState(null);
-  const [isloading, setLoading] = useState(false);
   const { search: searchData } = useSelector(({ loadingslip }) => loadingslip);
-  const apiRef = useGridApiRef();
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -208,6 +201,7 @@ const LoadingSlips = () => {
         limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
         page: paginationModel.page + 1,
       },
+      search: searchData,
     };
     dispatch(getLoadingSlips(requestObject))
       .then(({ payload = {} }) => {
@@ -216,7 +210,7 @@ const LoadingSlips = () => {
           setHttpError(message);
         } else {
           const updatedLS = payload?.data.loadingSlips?.filter?.((ls) => {
-            ls.date = getFormattedDate(new Date(ls.createdAt));
+            ls.date = getFormattedDate(new Date(ls.date));
             ls.totalFreight = ls.totalFreight?.toFixed?.(2);
             ls.totalPayable = ls.totalPayable?.toFixed?.(2);
             return !ls.isLocalMemo;
@@ -241,7 +235,12 @@ const LoadingSlips = () => {
     if (selectedBranch) {
       fetchData();
     }
-  }, [selectedBranch, paginationModel.page, paginationModel.pageSize]);
+  }, [
+    selectedBranch,
+    paginationModel.page,
+    paginationModel.pageSize,
+    searchData,
+  ]);
 
   useEffect(() => {
     if (viewLS && viewLS._id) {
@@ -289,26 +288,7 @@ const LoadingSlips = () => {
     }
   }, [sendEmail, emailAddress, selectedLS]);
 
-  const updateSearchValue = useMemo(() => {
-    return debounce((newValue) => {
-      apiRef.current.setQuickFilterValues(
-        newValue.split?.(" ")?.filter?.((word) => word !== "")
-      );
-    }, 500);
-  }, [apiRef]);
-
-  useEffect(() => {
-    if (searchData && pageState.data?.length) {
-      setLoading(true);
-      updateSearchValue(searchData);
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
-    }
-  }, [pageState.data]);
-
   const onSearchChange = (e) => {
-    updateSearchValue(e.target.value);
     dispatch(onSearch(e.target.value));
   };
 
@@ -366,7 +346,7 @@ const LoadingSlips = () => {
 
   return (
     <>
-      {(isLoading || isloading) && <LoadingSpinner />}
+      {isLoading && <LoadingSpinner />}
       <div className="inner-wrap">
         {isDialogOpen && (
           <CustomDialog
@@ -430,7 +410,6 @@ const LoadingSlips = () => {
 
         <div style={{ width: "100%" }}>
           <DataGrid
-            apiRef={apiRef}
             autoHeight
             density="compact"
             rows={pageState.data}

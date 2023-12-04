@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -14,7 +14,6 @@ import {
   Button,
   TextField,
   InputAdornment,
-  debounce,
   Autocomplete,
 } from "@mui/material";
 
@@ -154,7 +153,6 @@ const LorryReceipts = () => {
   const [sendEmail, setSendEmail] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [selectedLR, setSelectedLR] = useState(null);
-  const [isloading, setLoading] = useState(false);
   const { search: searchData } = useSelector(
     ({ lorryreceipt }) => lorryreceipt
   );
@@ -206,6 +204,7 @@ const LorryReceipts = () => {
         limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
         page: paginationModel.page + 1,
       },
+      search: searchData,
     };
     dispatch(getLorryReceiptsWithCount(requestObject))
       .then(({ payload = {} }) => {
@@ -237,7 +236,12 @@ const LorryReceipts = () => {
     if (selectedBranch?._id) {
       fetchData();
     }
-  }, [selectedBranch, paginationModel.page, paginationModel.pageSize]);
+  }, [
+    selectedBranch,
+    paginationModel.page,
+    paginationModel.pageSize,
+    searchData,
+  ]);
 
   useEffect(() => {
     if (viewLRId) {
@@ -298,26 +302,7 @@ const LorryReceipts = () => {
     }
   }, [sendEmail, emailAddress, selectedLR]);
 
-  const updateSearchValue = useMemo(() => {
-    return debounce((newValue) => {
-      apiRef.current.setQuickFilterValues(
-        newValue.split?.(" ")?.filter?.((word) => word !== "")
-      );
-    }, 500);
-  }, [apiRef]);
-
-  useEffect(() => {
-    if (searchData && pageState.data?.length) {
-      setLoading(true);
-      updateSearchValue(searchData);
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
-    }
-  }, [pageState.data]);
-
   const onSearchChange = (e) => {
-    updateSearchValue(e.target.value);
     dispatch(onSearch(e.target.value));
   };
 
@@ -384,7 +369,7 @@ const LorryReceipts = () => {
 
   return (
     <>
-      {(isLoading || isloading) && <LoadingSpinner />}
+      {isLoading && <LoadingSpinner />}
       <div className="inner-wrap">
         {isDialogOpen && (
           <CustomDialog

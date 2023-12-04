@@ -88,102 +88,129 @@ const getLorryReceiptsForLS = (req, res, next) => {
     });
 };
 
-const getLorryReceiptsWithCount = (req, res, next) => {
-  if (
-    !req.body.branch ||
-    !req.body.pagination.page ||
-    !req.body.pagination.limit
-  ) {
-    return res
-      .status(200)
-      .json({ message: "Branch ID & pagination is required!" });
-  }
+const getLorryReceiptsWithCount = async (req, res, next) => {
+  try {
+    const { pagination, branch, search } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
+    const param = { branch, active: true };
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
+    if (!branch || !pagination.page || !pagination.limit) {
+      return res
+        .status(200)
+        .json({ message: "Branch ID & pagination is required!" });
+    }
 
-  LorryReceipt.find({ branch: req.body.branch, active: true })
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-          isLastPage: false,
-        });
-      }
+    if (search) {
+      const searchText = new RegExp(search);
+      param["$or"] = [
+        { lrNo: { $regex: searchText, $options: "i" } },
+        { date: { $regex: searchText, $options: "i" } },
+        { consignorName: { $regex: searchText, $options: "i" } },
+        { consigneeName: { $regex: searchText, $options: "i" } },
+        { from: { $regex: searchText, $options: "i" } },
+        { to: { $regex: searchText, $options: "i" } },
+        { payType: { $regex: searchText, $options: "i" } },
+        ...(!isNaN(parseInt(search)) ? [{ total: parseInt(search) }] : []),
+      ];
+    }
+
+    const lorryReceipts = await LorryReceipt.find(
+      param,
+      "_id lrNo date consignorName from consigneeName to payType total status"
+    )
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await LorryReceipt.countDocuments(param);
+    res.json({
+      lorryReceipts,
+      count,
+      isLastPage: false,
     });
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching lorry receipts!",
+      error: error.message,
+    });
+  }
 };
 
-const getLRAckWithCount = (req, res, next) => {
-  if (
-    !req.body.branch ||
-    !req.body.pagination.page ||
-    !req.body.pagination.limit
-  ) {
-    return res
-      .status(200)
-      .json({ message: "Branch ID & pagination is required!" });
-  }
+const getLRAckWithCount = async (req, res, next) => {
+  try {
+    const { pagination, branch } = req.body;
+    const { page = 1, limit = 100, search } = pagination || {};
+    const start = (page - 1) * limit;
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
+    if (!branch || !pagination.page || !pagination.limit) {
+      return res
+        .status(200)
+        .json({ message: "Branch ID & pagination is required!" });
+    }
 
-  const query = {
-    active: true,
-    branch: req.body.branch,
-    status: { $ne: 0 },
-  };
-
-  if (req.body.query.startDate) {
-    const date = new Date(req.body.query.startDate);
-    const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-    const newDate = new Date(updatedDate)?.setUTCHours(0, 0, 0, 000);
-    query.date = {
-      ...query.date,
-      $gte: new Date(newDate)?.toISOString(),
+    const param = {
+      active: true,
+      branch: req.body.branch,
+      status: { $ne: 0 },
     };
-  }
-  if (req.body.query.endDate) {
-    const date = new Date(req.body.query.endDate);
-    const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-    const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-    query.date = {
-      ...query.date,
-      $lte: new Date(newDate)?.toISOString(),
-    };
-  }
 
-  if (req.body.query.type === "delivered") {
-    query.deliveryDate = { $exists: true, $ne: null };
-  }
-  if (req.body.query.type === "undelivered") {
-    query.deliveryDate = null;
-  }
+    if (req.body.query.startDate) {
+      const date = new Date(req.body.query.startDate);
+      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+      const newDate = new Date(updatedDate)?.setUTCHours(0, 0, 0, 000);
+      param.date = {
+        ...param.date,
+        $gte: new Date(newDate)?.toISOString(),
+      };
+    }
+    if (req.body.query.endDate) {
+      const date = new Date(req.body.query.endDate);
+      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+      param.date = {
+        ...param.date,
+        $lte: new Date(newDate)?.toISOString(),
+      };
+    }
 
-  LorryReceipt.find(query)
-    // .limit(limit)
-    // .skip(skip)
-    .sort("deliveryDate")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        return res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-          isLastPage: false,
-        });
-      }
+    if (req.body.query.type === "delivered") {
+      param.deliveryDate = { $exists: true, $ne: null };
+    }
+    if (req.body.query.type === "undelivered") {
+      param.deliveryDate = null;
+    }
+
+    if (search) {
+      const searchText = new RegExp(search);
+      param["$or"] = [
+        { lrNo: { $regex: searchText, $options: "i" } },
+        { memoNo: { $regex: searchText, $options: "i" } },
+        { deliveryDate: { $regex: searchText, $options: "i" } },
+        { payType: { $regex: searchText, $options: "i" } },
+        ...(!isNaN(parseInt(search)) ? [{ total: parseInt(search) }] : []),
+      ];
+    }
+
+    const lorryReceipts = await LorryReceipt.find(param)
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await LorryReceipt.countDocuments(param);
+    res.json({
+      lorryReceipts,
+      count,
+      isLastPage: false,
     });
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching lorry receipts!",
+      error: error.message,
+    });
+  }
 };
 
 const getAllLorryReceiptsWithCount = (req, res, next) => {
@@ -1035,43 +1062,54 @@ const removeLorryReceiptAck = (req, res) => {
   });
 };
 
-const getLoadingSlips = (req, res, next) => {
-  if (
-    !req.body.branch &&
-    req.userData &&
-    req.userData.type &&
-    req.userData.type?.toLowerCase() !== "superadmin"
-  ) {
-    return res.status(200).json({ message: "Branch ID is required!" });
-  }
-  let query = { active: true };
-  if (
-    req.userData &&
-    req.userData.type &&
-    req.userData.type?.toLowerCase() !== "superadmin"
-  ) {
-    query.branch = req.body.branch;
-  }
+const getLoadingSlips = async (req, res, next) => {
+  try {
+    const { pagination, branch, search } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
+    const param = { branch, active: true };
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
+    if (!branch || !pagination.page || !pagination.limit) {
+      return res
+        .status(200)
+        .json({ message: "Branch ID & pagination is required!" });
+    }
 
-  LoadingSlip.find(query)
-    .sort("-createdAt")
-    .exec((error, loadingSlips) => {
-      if (error) {
-        return res.status(200).json({
-          message: "Error fetching loading slips!",
-        });
-      } else {
-        res.json({
-          loadingSlips: loadingSlips.slice(start, end),
-          count: loadingSlips?.length,
-          isLastPage: false,
-        });
-      }
+    if (search) {
+      const searchText = new RegExp(search);
+      param["$or"] = [
+        { date: { $regex: searchText, $options: "i" } },
+        { vehicleNo: { $regex: searchText, $options: "i" } },
+        { fromName: { $regex: searchText, $options: "i" } },
+        { toName: { $regex: searchText, $options: "i" } },
+        ...(!isNaN(parseFloat(search))
+          ? [
+              { totalFreight: parseFloat(search) },
+              { totalPayable: parseFloat(search) },
+              { lsNo: parseFloat(search) },
+            ]
+          : []),
+      ];
+    }
+
+    const loadingSlips = await LoadingSlip.find(param)
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await LoadingSlip.countDocuments(param);
+    res.json({
+      loadingSlips,
+      count,
+      isLastPage: false,
     });
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching lorry receipts!",
+      error: error.message,
+    });
+  }
 };
 
 const getLoadingSlipsById = (req, res, next) => {
@@ -1817,51 +1855,61 @@ const getLorryReceiptsByDate = (req, res, next) => {
     });
 };
 
-const getBills = (req, res, next) => {
-  if (
-    !req.body.branch ||
-    !req.body.pagination ||
-    !req.body.pagination.page ||
-    !req.body.pagination.limit
-  ) {
-    return res
-      .status(200)
-      .json({ message: "Branch ID & pagination is required!" });
-  }
+const getBills = async (req, res, next) => {
+  try {
+    const { pagination, branch, search } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
+    const param = { branch, active: true };
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
-
-  Bill.aggregate([
-    { $match: { branch: req.body.branch, active: true } },
-    {
-      $addFields: {
-        customerId: { $toObjectId: "$customer" },
-      },
-    },
-    {
-      $lookup: {
-        from: "customer",
-        localField: "customerId",
-        foreignField: "_id",
-        as: "customer",
-      },
-    },
-    { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
-    { $sort: { createdAt: -1 } },
-  ]).exec((error, bills) => {
-    if (error) {
-      return res.status(200).json({
-        message: "Error fetching bills!",
-      });
-    } else {
-      return res.json({
-        bills: bills.slice(start, end),
-        count: bills?.length,
-      });
+    if (!branch || !pagination.page || !pagination.limit) {
+      return res
+        .status(200)
+        .json({ message: "Branch ID & pagination is required!" });
     }
-  });
+
+    if (search) {
+      const searchText = new RegExp(search);
+      param["$or"] = [
+        { date: { $regex: searchText, $options: "i" } },
+        { ["customer.name"]: { $regex: searchText, $options: "i" } },
+        ...(!isNaN(parseFloat(search))
+          ? [{ total: parseFloat(search) }, { billNo: parseFloat(search) }]
+          : []),
+      ];
+    }
+
+    const bills = await Bill.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $skip: start },
+      { $limit: limit },
+      {
+        $addFields: {
+          customerId: { $toObjectId: "$customer" },
+        },
+      },
+      {
+        $lookup: {
+          from: "customer",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $match: param },
+      { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+    ]);
+    const count = await Bill.countDocuments(param);
+
+    return res.json({
+      bills,
+      count: count < bills.length ? bills.length : count,
+    });
+  } catch (error) {
+    return res.status(200).json({
+      message: "Error fetching bills!",
+    });
+  }
 };
 
 const getBillsByCustomer = (req, res, next) => {
@@ -2880,256 +2928,268 @@ const viewPaymentCollection = (req, res) => {
   });
 };
 
-const getLorryReceiptsForReport = (req, res) => {
-  if (!req.body.pagination.page || !req.body.pagination.limit) {
-    return res.status(200).json({ message: "Pagination inputs not provided!" });
-  }
+const getLorryReceiptsForReport = async (req, res, next) => {
+  try {
+    const { pagination, query } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
-
-  const query = { active: true };
-  if (req.body.query) {
-    if (req.body.query.branch) {
-      query.branch = req.body.query.branch;
-    }
-    if (req.body.query.from) {
-      const date = new Date(req.body.query.from);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
-      query.date = {
-        ...query.date,
-        $gte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.to) {
-      const date = new Date(req.body.query.to);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-      query.date = {
-        ...query.date,
-        $lte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.payType) {
-      query.payType = req.body.query.payType;
+    if (!pagination.page || !pagination.limit) {
+      return res
+        .status(200)
+        .json({ message: "Branch ID & pagination is required!" });
     }
 
-    let allSearch = "",
-      consignor = "";
-    if (req.body.query.searchText) {
-      const searchText = new RegExp(req.body.query.searchText);
-      allSearch = [
-        { lrNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
-        { invoiceNo: { $regex: searchText, $options: "i" } },
-        { consignorName: { $regex: searchText, $options: "i" } },
-        { consigneeName: { $regex: searchText, $options: "i" } },
-        { from: { $regex: searchText, $options: "i" } },
-        { to: { $regex: searchText, $options: "i" } },
-        { payType: { $regex: searchText, $options: "i" } },
-        ...(!isNaN(parseInt(req.body.query.searchText))
-          ? [{ total: parseInt(req.body.query.searchText) }]
-          : []),
-      ];
-    }
-    if (req.body.query.consignor) {
-      consignor = [
-        { consignor: req.body.query.consignor },
-        { consignee: req.body.query.consignor },
-      ];
-    }
-    if (req.body.query.searchText && req.body.query.consignor) {
-      query["$and"] = [{ $or: allSearch }, { $or: consignor }];
-    } else if (req.body.query.searchText) {
-      query["$or"] = allSearch;
-    } else if (req.body.query.consignor) {
-      query["$or"] = consignor;
-    }
-  }
-
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-        });
+    const param = { active: true };
+    if (query) {
+      if (query.branch) {
+        param.branch = query.branch;
       }
-    });
-};
-
-const getPendingLorryReceiptForReport = (req, res) => {
-  if (!req.body.pagination.page || !req.body.pagination.limit) {
-    return res.status(200).json({ message: "Pagination inputs not provided!" });
-  }
-
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
-
-  const query = {
-    active: true,
-  };
-  if (req.body.query) {
-    if (req.body.query.branch) {
-      query.branch = req.body.query.branch;
-    }
-    if (req.body.query.consignor) {
-      query.consignor = req.body.query.consignor;
-    }
-    if (req.body.query.consignee) {
-      query.consignee = req.body.query.consignee;
-    }
-    if (req.body.query.from) {
-      const date = new Date(req.body.query.from);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
-      query.date = {
-        ...query.date,
-        $gte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.to) {
-      const date = new Date(req.body.query.to);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-      query.date = {
-        ...query.date,
-        $lte: new Date(newDate)?.toISOString(),
-      };
-    }
-
-    if (req.body.query.searchText) {
-      const searchText = new RegExp(req.body.query.searchText);
-      query["$and"] = [
-        { $or: [{ deliveryDate: null }, { deliveryDate: "" }] },
-        {
-          $or: [
-            { lrNo: { $regex: searchText, $options: "i" } },
-            { date: { $regex: searchText, $options: "i" } },
-            { consignorName: { $regex: searchText, $options: "i" } },
-            { consigneeName: { $regex: searchText, $options: "i" } },
-            ...(!isNaN(parseInt(req.body.query.searchText))
-              ? [{ total: parseInt(req.body.query.searchText) }]
-              : []),
-          ],
-        },
-      ];
-    } else {
-      query["$or"] = [{ deliveryDate: null }, { deliveryDate: "" }];
-    }
-  }
-
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-        });
+      if (query.from) {
+        const date = new Date(query.from);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
+        param.date = {
+          ...param.date,
+          $gte: new Date(newDate)?.toISOString(),
+        };
       }
-    });
-};
+      if (query.to) {
+        const date = new Date(query.to);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+        param.date = {
+          ...param.date,
+          $lte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.payType) {
+        param.payType = query.payType;
+      }
 
-const getLoadedLorryReceiptForReport = (req, res) => {
-  if (!req.body.pagination.page || !req.body.pagination.limit) {
-    return res.status(200).json({ message: "Pagination inputs not provided!" });
-  }
-
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
-
-  const query = {
-    active: true,
-    status: 1,
-  };
-  if (req.body.query) {
-    if (req.body.query.branch) {
-      query.branch = req.body.query.branch;
-    }
-    if (req.body.query.from) {
-      const date = new Date(req.body.query.from);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
-      query.date = {
-        ...query.date,
-        $gte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.to) {
-      const date = new Date(req.body.query.to);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-      query.date = {
-        ...query.date,
-        $lte: new Date(newDate)?.toISOString(),
-      };
-    }
-    let allSearch = "",
-      payType = "",
-      orAnd = "$or";
-
-    if (req.body.query.searchText) {
-      const searchText = new RegExp(req.body.query.searchText);
-      allSearch = [
-        { lrNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
-        { consignorName: { $regex: searchText, $options: "i" } },
-        { consigneeName: { $regex: searchText, $options: "i" } },
-        { from: { $regex: searchText, $options: "i" } },
-        { to: { $regex: searchText, $options: "i" } },
-        { payType: { $regex: searchText, $options: "i" } },
-      ];
-    }
-
-    if (req.body.query.payType) {
-      if (req.body.query.payType?.toLowerCase() === "open") {
-        payType = [{ deliveryDate: null }, { deliveryDate: "" }];
-      } else {
-        orAnd = "$and";
-        payType = [
-          { deliveryDate: { $ne: null } },
-          { deliveryDate: { $ne: "" } },
+      let allSearch = "",
+        consignor = "";
+      if (query.searchText) {
+        const searchText = new RegExp(query.searchText);
+        allSearch = [
+          { lrNo: { $regex: searchText, $options: "i" } },
+          { date: { $regex: searchText, $options: "i" } },
+          { invoiceNo: { $regex: searchText, $options: "i" } },
+          { consignorName: { $regex: searchText, $options: "i" } },
+          { consigneeName: { $regex: searchText, $options: "i" } },
+          { from: { $regex: searchText, $options: "i" } },
+          { to: { $regex: searchText, $options: "i" } },
+          { payType: { $regex: searchText, $options: "i" } },
+          ...(!isNaN(parseInt(query.searchText))
+            ? [{ total: parseInt(query.searchText) }]
+            : []),
         ];
       }
-    }
-
-    if (req.body.query.searchText && req.body.query.payType) {
-      query["$and"] = [{ $or: allSearch }, { [orAnd]: payType }];
-    } else if (req.body.query.payType) {
-      query[orAnd] = payType;
-    } else if (req.body.query.searchText) {
-      query["$or"] = allSearch;
-    }
-  }
-
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-        });
+      if (query.consignor) {
+        consignor = [
+          { consignor: query.consignor },
+          { consignee: query.consignor },
+        ];
       }
+      if (query.searchText && query.consignor) {
+        param["$and"] = [{ $or: allSearch }, { $or: consignor }];
+      } else if (query.searchText) {
+        param["$or"] = allSearch;
+      } else if (query.consignor) {
+        param["$or"] = consignor;
+      }
+    }
+
+    const lorryReceipts = await LorryReceipt.find(param)
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+    const count = await LorryReceipt.countDocuments(param);
+    res.json({
+      lorryReceipts,
+      count,
     });
+  } catch (lrError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipts!",
+    });
+  }
+};
+
+const getPendingLorryReceiptForReport = async (req, res, next) => {
+  try {
+    const { pagination, query } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
+
+    if (!pagination.page || !pagination.limit) {
+      return res.status(200).json({ message: "pagination is required!" });
+    }
+
+    const param = {
+      active: true,
+    };
+    if (req.body.query) {
+      if (req.body.query.branch) {
+        param.branch = req.body.query.branch;
+      }
+      if (req.body.query.consignor) {
+        param.consignor = req.body.query.consignor;
+      }
+      if (req.body.query.consignee) {
+        param.consignee = req.body.query.consignee;
+      }
+      if (req.body.query.from) {
+        const date = new Date(req.body.query.from);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
+        param.date = {
+          ...param.date,
+          $gte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (req.body.query.to) {
+        const date = new Date(req.body.query.to);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+        param.date = {
+          ...param.date,
+          $lte: new Date(newDate)?.toISOString(),
+        };
+      }
+
+      if (req.body.query.searchText) {
+        const searchText = new RegExp(req.body.query.searchText);
+        param["$and"] = [
+          { $or: [{ deliveryDate: null }, { deliveryDate: "" }] },
+          {
+            $or: [
+              { lrNo: { $regex: searchText, $options: "i" } },
+              { date: { $regex: searchText, $options: "i" } },
+              { consignorName: { $regex: searchText, $options: "i" } },
+              { consigneeName: { $regex: searchText, $options: "i" } },
+              ...(!isNaN(parseInt(req.body.query.searchText))
+                ? [{ total: parseInt(req.body.query.searchText) }]
+                : []),
+            ],
+          },
+        ];
+      } else {
+        param["$or"] = [{ deliveryDate: null }, { deliveryDate: "" }];
+      }
+    }
+
+    const lorryReceipts = await LorryReceipt.find(param)
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await LorryReceipt.countDocuments(param);
+
+    res.json({
+      lorryReceipts,
+      count,
+    });
+  } catch (lrError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipts!",
+    });
+  }
+};
+
+const getLoadedLorryReceiptForReport = async (req, res, next) => {
+  try {
+    const { pagination, query } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
+
+    if (!pagination.page || !pagination.limit) {
+      return res.status(200).json({ message: "pagination is required!" });
+    }
+
+    const param = {
+      active: true,
+      status: 1,
+    };
+
+    if (query) {
+      if (query.branch) {
+        query.branch = query.branch;
+      }
+      if (query.from) {
+        const date = new Date(query.from);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
+        param.date = {
+          ...param.date,
+          $gte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.to) {
+        const date = new Date(query.to);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+        param.date = {
+          ...param.date,
+          $lte: new Date(newDate)?.toISOString(),
+        };
+      }
+      let allSearch = "",
+        payType = "",
+        orAnd = "$or";
+
+      if (query.searchText) {
+        const searchText = new RegExp(query.searchText);
+        allSearch = [
+          { lrNo: { $regex: searchText, $options: "i" } },
+          { date: { $regex: searchText, $options: "i" } },
+          { consignorName: { $regex: searchText, $options: "i" } },
+          { consigneeName: { $regex: searchText, $options: "i" } },
+          { from: { $regex: searchText, $options: "i" } },
+          { to: { $regex: searchText, $options: "i" } },
+          { payType: { $regex: searchText, $options: "i" } },
+        ];
+      }
+
+      if (query.payType) {
+        if (query.payType?.toLowerCase() === "open") {
+          payType = [{ deliveryDate: null }, { deliveryDate: "" }];
+        } else {
+          orAnd = "$and";
+          payType = [
+            { deliveryDate: { $ne: null } },
+            { deliveryDate: { $ne: "" } },
+          ];
+        }
+      }
+
+      if (query.searchText && query.payType) {
+        param["$and"] = [{ $or: allSearch }, { [orAnd]: payType }];
+      } else if (query.payType) {
+        param[orAnd] = payType;
+      } else if (query.searchText) {
+        param["$or"] = allSearch;
+      }
+    }
+
+    const lorryReceipts = await LorryReceipt.find(param)
+      .sort("-createdAt")
+      .skip(start)
+      .limit(limit)
+      .lean();
+
+    const count = await LorryReceipt.countDocuments(param);
+    res.json({
+      lorryReceipts,
+      count,
+    });
+  } catch (lrError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipts!",
+    });
+  }
 };
 
 const downloadLRReport = (req, res) => {
@@ -3551,283 +3611,289 @@ const addFONum = (req, res) => {
   }
 };
 
-const getLoadingSlipForReport = (req, res) => {
-  if (!req.body.pagination.page || !req.body.pagination.limit) {
-    return res.status(200).json({ message: "Pagination inputs not provided!" });
-  }
+const getLoadingSlipForReport = async (req, res, next) => {
+  try {
+    const { pagination, query } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
+    if (!pagination.page || !pagination.limit) {
+      return res.status(200).json({ message: "pagination is required!" });
+    }
 
-  const query = { active: true };
-  if (req.body.query) {
-    if (req.body.query.branch) {
-      query.branch = req.body.query.branch;
+    const param = { active: true };
+    if (query) {
+      if (query.branch) {
+        param.branch = query.branch;
+      }
+      if (query.from) {
+        const date = new Date(query.from);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
+        param.date = {
+          ...param.date,
+          $gte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.to) {
+        const date = new Date(query.to);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+        param.date = {
+          ...param.date,
+          $lte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.lrNo) {
+        param.lrList = {
+          $elemMatch: {
+            lrNo: new RegExp(query.lrNo?.toUpperCase()),
+          },
+        };
+      }
+      if (query.owner) {
+        param.vehicleOwner = {
+          $regex: new RegExp(query.owner),
+          $options: "i",
+        };
+      }
+      if (query.vehicle) {
+        param.vehicleNo = {
+          $regex: new RegExp(query.vehicle),
+          $options: "i",
+        };
+      }
+      if (query.searchText) {
+        const searchText = new RegExp(query.searchText);
+        param["$or"] = [
+          { lsNo: { $regex: searchText, $options: "i" } },
+          { date: { $regex: searchText, $options: "i" } },
+          { vehicleOwner: { $regex: searchText, $options: "i" } },
+          { vehicleNo: { $regex: searchText, $options: "i" } },
+          ...(!isNaN(parseInt(query.searchText))
+            ? [
+                { advance: parseInt(query.searchText) },
+                { rent: parseInt(query.searchText) },
+                { totalPayable: parseInt(query.searchText) },
+              ]
+            : []),
+        ];
+      }
     }
-    if (req.body.query.from) {
-      const date = new Date(req.body.query.from);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
-      query.date = {
-        ...query.date,
-        $gte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.to) {
-      const date = new Date(req.body.query.to);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-      query.date = {
-        ...query.date,
-        $lte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.lrNo) {
-      query.lrList = {
-        $elemMatch: {
-          lrNo: new RegExp(req.body.query.lrNo?.toUpperCase()),
-        },
-      };
-    }
-    if (req.body.query.owner) {
-      query.vehicleOwner = {
-        $regex: new RegExp(req.body.query.owner),
-        $options: "i",
-      };
-    }
-    if (req.body.query.vehicle) {
-      query.vehicleNo = {
-        $regex: new RegExp(req.body.query.vehicle),
-        $options: "i",
-      };
-    }
-    if (req.body.query.searchText) {
-      const searchText = new RegExp(req.body.query.searchText);
-      query["$or"] = [
-        { lsNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
-        { vehicleOwner: { $regex: searchText, $options: "i" } },
-        { vehicleNo: { $regex: searchText, $options: "i" } },
-        ...(!isNaN(parseInt(req.body.query.searchText))
-          ? [
-              { advance: parseInt(req.body.query.searchText) },
-              { rent: parseInt(req.body.query.searchText) },
-              { totalPayable: parseInt(req.body.query.searchText) },
-            ]
-          : []),
-      ];
-    }
-  }
 
-  LoadingSlip.aggregate([
-    { $match: query },
-    {
-      $addFields: {
-        list: {
-          $map: {
-            input: "$lrList",
-            as: "lrObj",
-            in: "$$lrObj.lrNo",
+    const loadingSlips = await LoadingSlip.aggregate([
+      { $match: param },
+      { $sort: { createdAt: -1 } },
+      { $skip: start },
+      { $limit: limit },
+      {
+        $addFields: {
+          list: {
+            $map: {
+              input: "$lrList",
+              as: "lrObj",
+              in: "$$lrObj.lrNo",
+            },
           },
         },
       },
-    },
-    {
-      $lookup: {
-        from: "lorryReceipt",
-        localField: "list",
-        foreignField: "lrNo",
-        as: "lorryReceipts",
+      {
+        $lookup: {
+          from: "lorryReceipt",
+          localField: "list",
+          foreignField: "lrNo",
+          as: "lorryReceipts",
+        },
       },
-    },
-    {
-      $unset: ["list", "lrList", "supplierPayments"],
-    },
-    { $sort: { createdAt: -1 } },
-  ]).exec((lsError, loadingSlips) => {
-    if (lsError) {
-      return res.status(200).json({
-        message: "Error fetching lorry receipt challans!",
+      {
+        $unset: ["list", "lrList", "supplierPayments"],
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
+    const updatedLS = loadingSlips.map((ls, index) => {
+      return {
+        _id: ls._id,
+        date: getFormattedDate(new Date(ls.date)),
+        formattedLSNo: (ls.lsNo + "").padStart?.(6, "0"),
+        totalHamali: ls.lorryReceipts.reduce(
+          (total, lr) => total + lr.hamali,
+          0
+        ),
+        srNo: index + 1,
+        vehicleOwner: ls.vehicleOwner,
+        vehicleNo: ls.vehicleNo,
+        totalFreight: ls.totalFreight,
+        advance: ls.advance,
+        rent: ls.rent,
+        totalPayable: ls.totalPayable,
+      };
+    });
+    if (query.isPrint) {
+      const workbook = exportLoadingSlipToXlsx(updatedLS);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=" + "data.xlsx"
+      );
+      return workbook.xlsx.write(res).then(() => {
+        res.status(200).end();
       });
     } else {
-      const updatedLS = loadingSlips.map((ls, index) => {
-        return {
-          _id: ls._id,
-          date: getFormattedDate(new Date(ls.date)),
-          formattedLSNo: (ls.lsNo + "").padStart?.(6, "0"),
-          totalHamali: ls.lorryReceipts.reduce(
-            (total, lr) => total + lr.hamali,
-            0
-          ),
-          srNo: index + 1,
-          vehicleOwner: ls.vehicleOwner,
-          vehicleNo: ls.vehicleNo,
-          totalFreight: ls.totalFreight,
-          advance: ls.advance,
-          rent: ls.rent,
-          totalPayable: ls.totalPayable,
-        };
+      const count = await LoadingSlip.countDocuments(param);
+      res.json({
+        loadingSlips: updatedLS,
+        count,
       });
-      if (req.body.query.isPrint) {
-        const workbook = exportLoadingSlipToXlsx(updatedLS);
-        res.setHeader(
-          "Content-Type",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        res.setHeader(
-          "Content-Disposition",
-          "attachment; filename=" + "data.xlsx"
-        );
-        return workbook.xlsx.write(res).then(() => {
-          res.status(200).end();
-        });
-      } else {
-        res.json({
-          loadingSlips: updatedLS.slice(start, end),
-          count: updatedLS?.length,
-        });
-      }
     }
-  });
+  } catch (lsError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipt challans!",
+    });
+  }
 };
 
-const getChallanForReport = (req, res) => {
-  if (!req.body.pagination.page || !req.body.pagination.limit) {
-    return res.status(200).json({ message: "Pagination inputs not provided!" });
-  }
+const getChallanForReport = async (req, res, next) => {
+  try {
+    const { pagination, query } = req.body;
+    const { page = 1, limit = 100 } = pagination || {};
+    const start = (page - 1) * limit;
 
-  const limit = req.body.pagination.limit || 100;
-  const start = (req.body.pagination.page - 1) * limit;
-  const end = req.body.pagination.page * limit;
+    if (!pagination.page || !pagination.limit) {
+      return res.status(200).json({ message: "pagination is required!" });
+    }
 
-  const query = { active: true };
-  if (req.body.query) {
-    if (req.body.query.branch) {
-      query.branch = req.body.query.branch;
+    const param = { active: true };
+    if (query) {
+      if (query.branch) {
+        param.branch = query.branch;
+      }
+      if (query.from) {
+        const date = new Date(query.from);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
+        param.date = {
+          ...param.date,
+          $gte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.to) {
+        const date = new Date(query.to);
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+        param.date = {
+          ...param.date,
+          $lte: new Date(newDate)?.toISOString(),
+        };
+      }
+      if (query.lrNo) {
+        param.lrList = {
+          $elemMatch: {
+            lrNo: new RegExp(query.lrNo?.toUpperCase()),
+          },
+        };
+      }
     }
-    if (req.body.query.from) {
-      const date = new Date(req.body.query.from);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(0, 0, 0, 000);
-      query.date = {
-        ...query.date,
-        $gte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.to) {
-      const date = new Date(req.body.query.to);
-      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
-      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
-      query.date = {
-        ...query.date,
-        $lte: new Date(newDate)?.toISOString(),
-      };
-    }
-    if (req.body.query.lrNo) {
-      query.lrList = {
-        $elemMatch: {
-          lrNo: new RegExp(req.body.query.lrNo?.toUpperCase()),
-        },
-      };
-    }
-  }
 
-  LoadingSlip.aggregate([
-    {
-      $addFields: {
-        list: {
-          $map: {
-            input: "$lrList",
-            as: "lrObj",
-            in: "$$lrObj.lrNo",
+    const loadingSlips = await LoadingSlip.aggregate([
+      {
+        $addFields: {
+          list: {
+            $map: {
+              input: "$lrList",
+              as: "lrObj",
+              in: "$$lrObj.lrNo",
+            },
           },
         },
       },
-    },
-    {
-      $lookup: {
-        from: "lorryReceipt",
-        localField: "list",
-        foreignField: "lrNo",
-        as: "lorryReceipts",
+      {
+        $lookup: {
+          from: "lorryReceipt",
+          localField: "list",
+          foreignField: "lrNo",
+          as: "lorryReceipts",
+        },
       },
-    },
-    { $match: query },
-    {
-      $unset: ["list", "lrList", "supplierPayments"],
-    },
-    { $sort: { createdAt: -1 } },
-  ]).exec((lsError, loadingSlips) => {
-    if (lsError) {
-      return res.status(200).json({
-        message: "Error fetching lorry receipt challans!",
+      { $match: param },
+      { $sort: { createdAt: -1 } },
+      { $skip: start },
+      { $limit: limit },
+      {
+        $unset: ["list", "lrList", "supplierPayments"],
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
+    let returnList = [];
+    let srNo = 1;
+    loadingSlips.map((ls) => {
+      ls.date = getFormattedDate(new Date(ls.date));
+      ls.formattedLSNo = (ls.lsNo + "").padStart?.(6, "0");
+      ls.lorryReceipts?.forEach?.((element) => {
+        let noOfArticle = 0,
+          totalWeight = 0;
+        element.transactions.every((article) => {
+          noOfArticle += article.articleNo;
+          totalWeight += article.weight;
+        });
+
+        if (
+          query.consignor === element.consignor ||
+          query.consignor === element.consignee ||
+          !query.consignor
+        ) {
+          returnList = [
+            ...returnList,
+            {
+              _id: element._id,
+              srNo: srNo,
+              formattedLSNo: ls.formattedLSNo,
+              from: element.from,
+              generatedFrom: element.from,
+              date: ls.date,
+              vehicleNo: ls.vehicleNo,
+              to: element.to,
+              total: element.total,
+              lrNo: element.lrNo,
+              consignorName: element.consignorName,
+              consigneeName: element.consigneeName,
+              noOfArticle,
+              totalWeight,
+              payType: element.payType,
+            },
+          ];
+          srNo += 1;
+        }
+      });
+      return ls;
+    });
+    if (query.isPrint) {
+      const workbook = exportLRChallanDataToXlsx(returnList);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=" + "data.xlsx"
+      );
+      return workbook.xlsx.write(res).then(() => {
+        res.status(200).end();
       });
     } else {
-      let returnList = [];
-      let srNo = 1;
-      loadingSlips.map((ls) => {
-        ls.date = getFormattedDate(new Date(ls.date));
-        ls.formattedLSNo = (ls.lsNo + "").padStart?.(6, "0");
-        ls.lorryReceipts?.forEach?.((element) => {
-          let noOfArticle = 0,
-            totalWeight = 0;
-          element.transactions.every((article) => {
-            noOfArticle += article.articleNo;
-            totalWeight += article.weight;
-          });
-
-          if (
-            req.body.query.consignor === element.consignor ||
-            req.body.query.consignor === element.consignee ||
-            !req.body.query.consignor
-          ) {
-            returnList = [
-              ...returnList,
-              {
-                _id: element._id,
-                srNo: srNo,
-                formattedLSNo: ls.formattedLSNo,
-                from: element.from,
-                generatedFrom: element.from,
-                date: ls.date,
-                vehicleNo: ls.vehicleNo,
-                to: element.to,
-                total: element.total,
-                lrNo: element.lrNo,
-                consignorName: element.consignorName,
-                consigneeName: element.consigneeName,
-                noOfArticle,
-                totalWeight,
-                payType: element.payType,
-              },
-            ];
-            srNo += 1;
-          }
-        });
-        return ls;
+      const count = await LoadingSlip.countDocuments(param);
+      res.json({
+        loadingSlips: returnList,
+        count,
       });
-      if (req.body.query.isPrint) {
-        const workbook = exportLRChallanDataToXlsx(returnList);
-        res.setHeader(
-          "Content-Type",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        res.setHeader(
-          "Content-Disposition",
-          "attachment; filename=" + "data.xlsx"
-        );
-        return workbook.xlsx.write(res).then(() => {
-          res.status(200).end();
-        });
-      } else {
-        res.json({
-          loadingSlips: returnList.slice(start, end),
-          count: returnList?.length,
-        });
-      }
     }
-  });
+  } catch (lsError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipt challans!",
+    });
+  }
 };
 
 module.exports = {

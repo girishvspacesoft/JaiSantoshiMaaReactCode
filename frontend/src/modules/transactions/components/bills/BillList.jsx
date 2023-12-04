@@ -190,6 +190,7 @@ const BillList = () => {
         limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
         page: paginationModel.page + 1,
       },
+      search: searchData,
     };
     dispatch(getBills(requestObject))
       .then(({ payload = {} }) => {
@@ -226,7 +227,12 @@ const BillList = () => {
     if (selectedBranch?._id) {
       fetchData();
     }
-  }, [selectedBranch, paginationModel.page, paginationModel.pageSize]);
+  }, [
+    selectedBranch,
+    paginationModel.page,
+    paginationModel.pageSize,
+    searchData,
+  ]);
 
   useEffect(() => {
     if (viewBill && viewBill._id) {
