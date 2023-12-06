@@ -212,7 +212,7 @@ const BillEdit = () => {
   }, [billId]);
 
   useEffect(() => {
-    if (fetchedBill._id && fetchedLorryReceipts?.length && customers?.length) {
+    if (fetchedBill._id && fetchedLorryReceipts?.length) {
       const updatedBill = { ...fetchedBill };
       const updatedLorryReceipts = fetchedLorryReceipts?.map?.((fetchedLR) => {
         const isInBill = fetchedBill.lrList?.filter?.(
@@ -245,7 +245,7 @@ const BillEdit = () => {
       setBill({ ...updatedBill, branch: filteredBranch });
       setLorryReceipts(updatedFilteredLorryReceipts);
     }
-  }, [fetchedBill, fetchedLorryReceipts, customers, billId]);
+  }, [fetchedBill, fetchedLorryReceipts, billId]);
 
   useEffect(() => {
     const total = +bill.totalFreight + +bill.freight + +bill.localFreight;
