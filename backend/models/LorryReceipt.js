@@ -9,7 +9,6 @@ const LorryReceipt = new Schema(
     },
     lrNo: {
       type: String,
-      unique: true,
     },
     date: {
       type: String,
@@ -85,6 +84,18 @@ const LorryReceipt = new Schema(
       type: Number,
       //required: true,
     },
+    statisticalCharges: {
+      type: Number,
+      //required: true,
+    },
+    serviceTaxCharges: {
+      type: Number,
+      //required: true,
+    },
+    panNo: {
+      type: String,
+      //required: true,
+    },
     hamali: {
       type: Number,
     },
@@ -92,6 +103,18 @@ const LorryReceipt = new Schema(
       type: Number,
     },
     lrCharges: {
+      type: Number,
+      //required: true,
+    },
+    weightCharges: {
+      type: Number,
+      //required: true,
+    },
+    oscCharges: {
+      type: Number,
+      //required: true,
+    },
+    collectionCharges: {
       type: Number,
       //required: true,
     },
@@ -205,15 +228,17 @@ const LorryReceipt = new Schema(
     },
     createdBy: {
       type: String,
-      required: function () {
-        return !this.updatedBy;
-      },
+      default: "System",
+      // required: function () {
+      //   return !this.updatedBy;
+      // },
     },
     updatedBy: {
       type: String,
-      required: function () {
-        return !this.createdBy;
-      },
+      default: "System",
+      // required: function () {
+      //   return !this.createdBy;
+      // },
     },
   },
   {
@@ -222,6 +247,6 @@ const LorryReceipt = new Schema(
   }
 );
 
-LorryReceipt.index({ vehicleNo: "text" });
+// LorryReceipt.index({ vehicleNo: "text" });
 
 module.exports = mongoose.model("LorryReceipt", LorryReceipt);

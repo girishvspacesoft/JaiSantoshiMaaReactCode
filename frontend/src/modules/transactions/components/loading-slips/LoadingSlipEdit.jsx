@@ -19,7 +19,6 @@ import { LoadingSpinner } from "../../../../ui-controls";
 import {
   base64ToObjectURL,
   isSuperAdminOrAdmin,
-  mobileNoRegEx,
   validateNumber,
   validatePhoneNumber,
 } from "../../../../services/utils";
@@ -143,7 +142,8 @@ const LoadingSlipEdit = () => {
   const [, setUpdatedLRList] = useState([]);
   const [isLocalMemo, setIsLocalMemo] = useState(false);
   const [selectedLR, setSelectedLR] = useState([]);
-
+  const [serachLr, setSearchLr] = useState("");
+  const [updatedLR, setUpdatedLR] = useState([]);
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
@@ -169,22 +169,27 @@ const LoadingSlipEdit = () => {
   useEffect(() => {
     if (lsId) {
       const branches = !isSuperAdminOrAdmin() ? user.userBranches || [] : "";
-      dispatch(getLorryReceipts(branches))
+      dispatch(
+        getLorryReceipts({
+          branches,
+          search: serachLr,
+          lsId,
+        })
+      )
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
           if (message) {
             setHttpError(message);
           } else {
-            const lrList = payload?.data?.map?.((lr) => {
-              return {
-                ...lr,
-                checked: false,
-              };
-            });
-            const filteredLorryReceipts = lrList?.filter?.((lr) => {
-              return !lr.associatedLS || lr.associatedLS === lsId;
-            });
-            setLorryReceipts(filteredLorryReceipts);
+            const prevCheckedList = updatedLR.filter(({ checked }) => checked);
+
+            const latestList = [
+              ...prevCheckedList,
+              ...(payload?.data?.filter(
+                ({ lrNo }) => !prevCheckedList?.some((lr) => lrNo === lr.lrNo)
+              ) || []),
+            ];
+            setLorryReceipts(latestList);
           }
         })
         .catch(() => {
@@ -193,7 +198,7 @@ const LoadingSlipEdit = () => {
           );
         });
     }
-  }, [lsId]);
+  }, [lsId, serachLr]);
 
   useEffect(() => {
     const err = Object.keys(formErrors);
@@ -223,7 +228,7 @@ const LoadingSlipEdit = () => {
     if (lsId && vehicles?.length && drivers?.length) {
       dispatch(getLoadingSlip(lsId))
         .then(({ payload = {} }) => {
-          const { message, vehicleNo, licenseNo, from, to, paybleAt } =
+          const { message, vehicleNo, driver, from, to, paybleAt } =
             payload?.data || {};
           if (message) {
             setHttpError(message);
@@ -236,8 +241,8 @@ const LoadingSlipEdit = () => {
               ?.indexOf?.(vehicleNo);
             response.vehicle = vehicles[vehicleIndex];
             const driverIndex = drivers
-              ?.map?.((driver) => driver.licenseNo)
-              ?.indexOf?.(licenseNo);
+              ?.map?.((driver) => driver._id)
+              ?.indexOf?.(driver);
             response.driver = drivers[driverIndex];
             const fromIndex = places
               ?.map?.((place) => place._id)
@@ -267,9 +272,11 @@ const LoadingSlipEdit = () => {
       const selectedLRList = lorryReceipts?.map?.((lorryReceipt) => {
         return {
           ...lorryReceipt,
-          checked: loadingSlip.lrList?.some?.((lr) => {
-            return lr._id === lorryReceipt._id;
-          }),
+          checked:
+            lorryReceipt?.checked ||
+            loadingSlip.lrList?.some?.((lr) => {
+              return lr._id === lorryReceipt._id;
+            }),
         };
       });
       setLsLrList(selectedLRList);
@@ -306,6 +313,7 @@ const LoadingSlipEdit = () => {
     if (!validateForm(loadingSlip)) {
       const updatedLoadingSlip = { ...loadingSlip };
       updatedLoadingSlip.lrList = selectedLR?.filter?.((lr) => lr.checked);
+      updatedLoadingSlip.driver = updatedLoadingSlip.driver?._id;
       dispatch(updateLoadingSlip(updatedLoadingSlip))
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
@@ -654,7 +662,7 @@ const LoadingSlipEdit = () => {
                       error={formErrors.date.invalid}
                       label="Date"
                       inputFormat="DD/MM/YYYY"
-                      value={loadingSlip.date}
+                      value={loadingSlip.date || ""}
                       onChange={dateInputChangeHandler.bind(null, "date")}
                       renderInput={(params) => (
                         <TextField
@@ -683,7 +691,7 @@ const LoadingSlipEdit = () => {
                     size="small"
                     name="vehicle"
                     options={vehicles}
-                    value={loadingSlip.vehicle}
+                    value={loadingSlip.vehicle || null}
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "vehicle")
                     }
@@ -716,7 +724,7 @@ const LoadingSlipEdit = () => {
                     variant="outlined"
                     label="Vehicle owner"
                     error={formErrors.vehicleOwner.invalid}
-                    value={loadingSlip.vehicleOwner}
+                    value={loadingSlip.vehicleOwner || ""}
                     onChange={inputChangeHandler}
                     name="vehicleOwner"
                     id="vehicleOwner"
@@ -739,7 +747,7 @@ const LoadingSlipEdit = () => {
                     variant="outlined"
                     label="Vehicle owner address"
                     error={formErrors.vehicleOwnerAddress.invalid}
-                    value={loadingSlip.vehicleOwnerAddress}
+                    value={loadingSlip.vehicleOwnerAddress || ""}
                     onChange={inputChangeHandler}
                     name="vehicleOwnerAddress"
                     id="vehicleOwnerAddress"
@@ -762,7 +770,7 @@ const LoadingSlipEdit = () => {
                     variant="outlined"
                     label="Vehicle owner phone"
                     error={formErrors.vehicleOwnerPhone.invalid}
-                    value={loadingSlip.vehicleOwnerPhone}
+                    value={loadingSlip.vehicleOwnerPhone || ""}
                     onChange={inputChangeHandler}
                     onInput={validatePhoneNumber}
                     name="vehicleOwnerPhone"
@@ -788,7 +796,7 @@ const LoadingSlipEdit = () => {
                     size="small"
                     name="driver"
                     options={drivers}
-                    value={loadingSlip.driver}
+                    value={loadingSlip.driver || null}
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "driver")
                     }
@@ -927,6 +935,9 @@ const LoadingSlipEdit = () => {
             handleSelectedLr={handleSelectedLr}
             selectedLR={selectedLR}
             setSelectedLR={setSelectedLR}
+            setSearchLr={setSearchLr}
+            updatedLR={updatedLR}
+            setUpdatedLR={setUpdatedLR}
           />
           <Divider sx={{ margin: "20px 0" }} />
           <form action="" onSubmit={submitHandler} id="loadingSlipForm">

@@ -40,52 +40,55 @@ const sendEmail = require("../controller/email");
 const { ObjectId } = require("mongodb");
 const { translator } = require("./openAI");
 
-const getLorryReceipts = (req, res, next) => {
+const getLorryReceipts = async (req, res, next) => {
+  const { branch, search, lsId, branches } = req.body;
   const query = { active: true };
 
-  if (req.body.branch) {
-    query.branch = req.body.branch;
+  if (branch) {
+    query.branch = branch;
   }
-  if (req.body.branches) {
-    query.branch = { $in: req.body.branches };
+  if (branches) {
+    query.branch = { $in: branches };
   }
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json(lorryReceipts);
-      }
+  if (search) {
+    query.lrNo = { $regex: new RegExp(search?.trim?.()), $options: "i" };
+  } else if (lsId) {
+    query.associatedLS = lsId;
+  }
+  try {
+    const lorryReceipts = await LorryReceipt.find(query).limit(100).lean();
+    res.json(lorryReceipts);
+  } catch (lrError) {
+    return res.status(200).json({
+      message: "Error fetching lorry receipts!",
     });
+  }
 };
 
-const getLorryReceiptsForLS = (req, res, next) => {
-  const query = { active: true, status: 0 };
+const getLorryReceiptsForLS = async (req, res, next) => {
+  try {
+    const pageSize = 100; // Adjust this based on your requirements
+    const { search, branch } = req.body;
+    const param = { active: true, associatedLS: "" };
+    if (search) {
+      param.lrNo = { $regex: new RegExp(search?.trim?.()), $options: "i" };
+    }
+    if (branch) {
+      param.branch = branch;
+    }
+    const lorryReceipts = await LorryReceipt.find(param).limit(pageSize).lean();
 
-  if (req.body.branch) {
-    query.branch = { $in: req.body.branch };
-  }
-  const limit = 100;
-  const start = (req.body.page - 1) * limit;
-  const end = req.body.page * limit;
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        const records = lorryReceipts.slice(start, end);
-        return res.json({
-          lorryReceipts: records,
-          isLastPage: lorryReceipts?.length <= end,
-        });
-      }
+    res.json({
+      lorryReceipts,
+      count: 100,
+      isLastPage: true,
     });
+  } catch (error) {
+    res.status(200).json({
+      message: "Error fetching lorry receipts!",
+      error: error.message,
+    });
+  }
 };
 
 const getLorryReceiptsWithCount = async (req, res, next) => {
@@ -519,27 +522,29 @@ const removeLorryReceipt = (req, res, next) => {
     },
     active: true,
   };
-  LoadingSlip.findOne(query).exec((lrError, found) => {
-    if (lrError) {
-      return res.status(200).json({
-        message: "Error fetching lorry receipts!",
-      });
-    } else {
-      if (found) {
+  LoadingSlip.findOne(query)
+    .lean()
+    .exec((lrError, found) => {
+      if (lrError) {
         return res.status(200).json({
-          message: `This LR is used in Challan ${found.lsNo}. First, delete the challan.`,
+          message: "Error fetching lorry receipts!",
+        });
+      } else {
+        if (found) {
+          return res.status(200).json({
+            message: `This LR is used in Challan ${found.lsNo}. First, delete the challan.`,
+          });
+        }
+
+        LorryReceipt.findByIdAndRemove(req.params.id, (error, data) => {
+          if (error) {
+            res.status(200).json({ message: error.message });
+          } else {
+            res.json({ id: data._id });
+          }
         });
       }
-
-      LorryReceipt.findByIdAndRemove(req.params.id, (error, data) => {
-        if (error) {
-          res.status(200).json({ message: error.message });
-        } else {
-          res.json({ id: data._id });
-        }
-      });
-    }
-  });
+    });
 };
 
 const generateLrPdf = async (data, req, res, isSend, isUpdate, isView) => {
@@ -1457,7 +1462,7 @@ const printLoadingSlip = (req, res) => {
     let total = 0;
     const lrList = [];
     lsData.lrList.forEach(async (lr, index) => {
-      const lrData = await LorryReceipt.findById(lr._id);
+      const lrData = await LorryReceipt.findById(lr._id).lean();
       if (lrData) {
         const updatedLR = JSON.parse(JSON.stringify(lrData));
         updatedLR.articles = updatedLR.transactions
@@ -1840,6 +1845,7 @@ const getLorryReceiptsByDate = (req, res, next) => {
   }
 
   LorryReceipt.find(query)
+    .lean()
     // .limit(limit)
     // .skip(skip)
     .sort("-createdAt")
@@ -1918,6 +1924,7 @@ const getBillsByCustomer = (req, res, next) => {
   }
 
   Bill.find({ customer: req.body.customer, branch: req.body.branch })
+    .lean()
     .limit(1000)
     .exec((error, bills) => {
       if (error) {
@@ -2039,16 +2046,17 @@ const removeBill = (req, res, next) => {
   });
 };
 
-const getBill = (req, res, next) => {
+const getBill = async (req, res, next) => {
   if (!req.params.id) {
     return res.status(200).json({ message: "Bill ID is required!" });
   }
-  Bill.findById(req.params.id, (error, data) => {
-    if (error) {
-      return res.status(200).json({ message: error.message });
-    }
-    res.send(data);
-  });
+  try {
+    const data = await Bill.findById(req.params.id).lean();
+    const customer = await Customer.findById(data.customer).lean();
+    res.send({ ...data, customer });
+  } catch (error) {
+    return res.status(200).json({ message: error.message });
+  }
 };
 
 const updateBill = (req, res, next) => {
@@ -2146,7 +2154,7 @@ const printBill = (req, res) => {
       }
       const lrList = [];
       data.lrList.forEach(async (lorryReceipt) => {
-        const foundLR = await LorryReceipt.findById(lorryReceipt._id);
+        const foundLR = await LorryReceipt.findById(lorryReceipt._id).lean();
         const _id = lorryReceipt._id;
         const lr = JSON.parse(JSON.stringify(foundLR));
         lr.formattedDate = getFormattedDate(lr.date);
@@ -2328,7 +2336,7 @@ const exportToExcelBill = (req, res) => {
       }
       const lrList = [];
       data.lrList.forEach(async (lorryReceipt) => {
-        const foundLR = await LorryReceipt.findById(lorryReceipt._id);
+        const foundLR = await LorryReceipt.findById(lorryReceipt._id).lean();
         const _id = lorryReceipt._id;
         const lr = JSON.parse(JSON.stringify(foundLR));
         lr.formattedDate = getFormattedDate(lr.date);
@@ -2397,7 +2405,7 @@ const updateBills = (req, res, next) => {
   let updatedBills = [];
   req.body.bills.forEach(async (bill) => {
     try {
-      const billToBeUpdated = await Bill.findOne({ _id: bill._id });
+      const billToBeUpdated = await Bill.findOne({ _id: bill._id }).lean();
       billToBeUpdated.paymentCollection.push(bill.payment);
 
       let savedBill = await billToBeUpdated.save();
@@ -2416,6 +2424,7 @@ const updateBills = (req, res, next) => {
 
 const getLastLR = (req, res, next) => {
   LorryReceipt.find({ active: true })
+    .lean()
     .sort({ _id: -1 })
     .limit(1)
     .exec(function (err, lr) {
@@ -2473,7 +2482,7 @@ const saveSupplierPayments = (req, res, next) => {
   let updatedLs = [];
   req.body.loadingSlips.forEach(async (ls) => {
     try {
-      const LSToBeUpdated = await LoadingSlip.findOne({ _id: ls.ls_id });
+      const LSToBeUpdated = await LoadingSlip.findOne({ _id: ls.ls_id }).lean();
       LSToBeUpdated.supplierPayments.push(ls.payment);
       let savedLs = await LSToBeUpdated.save();
       if (savedLs) {
@@ -2544,7 +2553,7 @@ const updateSupplierBills = (req, res, next) => {
     try {
       const billsToBeUpdated = await SuppliersBill.findOne({
         _id: suppBill._id,
-      });
+      }).lean();
       billsToBeUpdated.payments.push(suppBill.payment);
       let savedBill = await billsToBeUpdated.save();
       if (savedBill) {
@@ -3253,6 +3262,7 @@ const downloadLRReport = (req, res) => {
     }
   }
   LorryReceipt.find(query)
+    .lean()
     .sort("-createdAt")
     .exec((err, data) => {
       if (err) {
@@ -3364,6 +3374,7 @@ const downloadPendingLRReport = (req, res) => {
     }
   }
   LorryReceipt.find(query)
+    .lean()
     .sort("-createdAt")
     .exec((err, data) => {
       if (err) {
@@ -3486,6 +3497,7 @@ const downloadLoadedLRReport = (req, res) => {
     }
   }
   LorryReceipt.find(query)
+    .lean()
     .sort("-createdAt")
     .exec((err, data) => {
       if (err) {
@@ -3552,15 +3564,17 @@ const getAllLRAck = (req, res) => {
   if (req.body.branch) {
     query = { ...query, branch: req.body.branch };
   }
-  LorryReceipt.find(query).exec((lrError, lorryReceipts) => {
-    if (lrError) {
-      return res.status(200).json({
-        message: "Error fetching lorry receipts!",
-      });
-    } else {
-      return res.json(lorryReceipts);
-    }
-  });
+  LorryReceipt.find(query)
+    .lean()
+    .exec((lrError, lorryReceipts) => {
+      if (lrError) {
+        return res.status(200).json({
+          message: "Error fetching lorry receipts!",
+        });
+      } else {
+        return res.json(lorryReceipts);
+      }
+    });
 };
 
 const getChallanAck = (req, res) => {

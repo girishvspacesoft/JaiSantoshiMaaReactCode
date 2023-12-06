@@ -25,6 +25,8 @@ export const SERVICE_TAX_BY = [
 export const PAY_MODE = [
   { label: "By Cash", value: "By Cash" },
   { label: "By Cheque", value: "By Cheque" },
+  { label: "By NEFT/RTGS", value: "By NEFT/RTGS" },
+  { label: "By Online banking", value: "By Online banking" },
 ];
 
 export const PAYMENT_MODES = [

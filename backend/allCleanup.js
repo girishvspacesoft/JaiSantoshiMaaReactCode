@@ -21,13 +21,13 @@ mongoose
         if (collections.length === index + 1) {
           console.log("all the collections are dropped");
           mongoose.connection.close();
-          process.exit();
+          process.exit(1);
         }
       });
     } else {
       console.log("No collection found");
       mongoose.connection.close();
-      process.exit();
+      process.exit(1);
     }
   })
   .catch((e) => {

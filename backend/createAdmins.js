@@ -37,5 +37,5 @@ const register = (username, password, callback) => {
 
 register("superadmin1", "0000000000");
 register("superadmin2", "0000000000", () => {
-  process.exit();
+  process.exit(1);
 });

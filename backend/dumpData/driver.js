@@ -27,10 +27,10 @@ async function init() {
     console.log("Finished creating drivers");
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit();
+    process.exit(1);
   } catch (e) {
     console.log(e);
-    process.exit();
+    process.exit(1);
   }
 }
 

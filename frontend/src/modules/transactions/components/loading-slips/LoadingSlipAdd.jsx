@@ -19,7 +19,6 @@ import { LoadingSpinner } from "../../../../ui-controls";
 import {
   base64ToObjectURL,
   isSuperAdminOrAdmin,
-  mobileNoRegEx,
   validateNumber,
   validatePhoneNumber,
 } from "../../../../services/utils";
@@ -137,6 +136,8 @@ const LoadingSlipAdd = () => {
   const [httpError, setHttpError] = useState("");
   const [isLocalMemo, setIsLocalMemo] = useState(false);
   const [page, setPage] = useState(1);
+  const [serachLr, setSearchLr] = useState("");
+  const [filteredLR, setFilteredLR] = useState([]);
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
@@ -165,6 +166,7 @@ const LoadingSlipAdd = () => {
         getLorryReceiptsForLS({
           branch: branches,
           page,
+          search: serachLr,
         })
       )
         .then(({ payload = {} }) => {
@@ -173,10 +175,15 @@ const LoadingSlipAdd = () => {
             setHttpError(message);
           } else {
             const { lorryReceipts, isLastPage } = payload?.data || {};
-            setLorryReceipts((list) => [
-              ...(page !== 1 ? list : []),
-              ...lorryReceipts,
-            ]);
+            const prevCheckedList = filteredLR.filter(({ checked }) => checked);
+
+            const latestList = [
+              ...prevCheckedList,
+              ...lorryReceipts.filter(
+                ({ lrNo }) => !prevCheckedList?.some((lr) => lrNo === lr.lrNo)
+              ),
+            ];
+            setLorryReceipts(() => [...latestList]);
             if (!isLastPage) {
               setPage((page) => page + 1);
             }
@@ -188,7 +195,7 @@ const LoadingSlipAdd = () => {
           );
         });
     }
-  }, [page]);
+  }, [serachLr, page]);
 
   useEffect(() => {
     const err = Object.keys(formErrors);
@@ -249,6 +256,7 @@ const LoadingSlipAdd = () => {
       const updatedLoadingSlip = {
         ...loadingSlip,
         branch: loadingSlip.branch?._id,
+        driver: loadingSlip.driver?._id,
       };
       if (isLocalMemo) {
         updatedLoadingSlip.isLocalMemo = true;
@@ -868,6 +876,9 @@ const LoadingSlipAdd = () => {
             loadingSlip={loadingSlip}
             setLoadingSlip={setLoadingSlip}
             lorryReceipts={lorryReceipts}
+            setSearchLr={setSearchLr}
+            filteredLR={filteredLR}
+            setFilteredLR={setFilteredLR}
           />
           <Divider sx={{ margin: "20px 0" }} />
           <form action="" onSubmit={submitHandler} id="loadingSlipForm">
@@ -959,7 +970,7 @@ const LoadingSlipAdd = () => {
                     ampmInClock
                     inputFormat="hh:mm a"
                     label="Current time"
-                    value={loadingSlip.currentTime}
+                    value={loadingSlip.currentTime || ""}
                     onChange={timeInputChangeHandler.bind(null, "currentTime")}
                     renderInput={(params) => (
                       <TextField name="currentTime" size="small" {...params} />
@@ -973,7 +984,7 @@ const LoadingSlipAdd = () => {
                     ampmInClock
                     inputFormat="hh:mm a"
                     label="Reach time"
-                    value={loadingSlip.reachTime}
+                    value={loadingSlip.reachTime || ""}
                     onChange={timeInputChangeHandler.bind(null, "reachTime")}
                     renderInput={(params) => (
                       <TextField name="reachTime" size="small" {...params} />

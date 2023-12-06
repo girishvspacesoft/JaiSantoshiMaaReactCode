@@ -151,14 +151,14 @@ const BillEdit = () => {
           const updatedLR = [...(payload?.data || [])];
           updatedLR?.forEach?.((lr) => {
             lr.checked = false;
-            lr.consignor =
-              customers?.filter?.(
-                (customer) => customer._id === lr.consignor
-              )[0] || "";
-            lr.consignee =
-              customers?.filter?.(
-                (customer) => customer._id === lr.consignee
-              )[0] || "";
+            // lr.consignor =
+            //   customers?.filter?.(
+            //     (customer) => customer._id === lr.consignor
+            //   )[0] || "";
+            // lr.consignee =
+            //   customers?.filter?.(
+            //     (customer) => customer._id === lr.consignee
+            //   )[0] || "";
           });
           setFetchedLorryReceipts(updatedLR);
         }
@@ -239,10 +239,10 @@ const BillEdit = () => {
           updatedLorryReceipts?.filter?.((lr) => lr._id === billLr._id)[0] || ""
         );
       });
-      const customer = customers?.find?.(
-        (customer) => customer._id === fetchedBill.customer
-      );
-      setBill({ ...updatedBill, branch: filteredBranch, customer });
+      // const customer = customers?.find?.(
+      //   (customer) => customer._id === fetchedBill.customer
+      // );
+      setBill({ ...updatedBill, branch: filteredBranch });
       setLorryReceipts(updatedFilteredLorryReceipts);
     }
   }, [fetchedBill, fetchedLorryReceipts, customers, billId]);

@@ -34,6 +34,10 @@ const LoadingSlip = new Schema(
       type: String,
       //required: true,
     },
+    driver: {
+      type: String,
+      //required: true,
+    },
     licenseNo: {
       type: String,
       //required: true,
@@ -108,12 +112,14 @@ const LoadingSlip = new Schema(
     },
     createdBy: {
       type: String,
+      default: "System",
       required: function () {
         return !this.updatedBy;
       },
     },
     updatedBy: {
       type: String,
+      default: "System",
       required: function () {
         return !this.createdBy;
       },

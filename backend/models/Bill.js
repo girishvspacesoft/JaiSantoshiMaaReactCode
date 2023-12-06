@@ -121,12 +121,14 @@ const Bill = new Schema(
     },
     createdBy: {
       type: String,
+      default: "System",
       required: function () {
         return !this.updatedBy;
       },
     },
     updatedBy: {
       type: String,
+      default: "System",
       required: function () {
         return !this.createdBy;
       },

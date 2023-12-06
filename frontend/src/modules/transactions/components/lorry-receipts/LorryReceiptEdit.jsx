@@ -1259,7 +1259,7 @@ const LorryReceiptEdit = () => {
                     autoHighlight={true}
                     size="small"
                     name="collectAt"
-                    options={places}
+                    options={branches}
                     value={lorryReceipt.collectAt}
                     onChange={(e, value) =>
                       autocompleteChangeListener(e, value, "collectAt")
