@@ -141,6 +141,7 @@ const BillEdit = () => {
         consignor,
         from,
         to,
+        billId,
       })
     )
       .then(({ payload = {} }) => {
@@ -171,20 +172,10 @@ const BillEdit = () => {
   };
 
   useEffect(() => {
-    if (fetchedBill.branch && fetchedBill.customer) {
-      fetchLorry(
-        fetchedBill.branch,
-        fetchedBill.customer,
-        fetchedBill.from,
-        fetchedBill.to
-      );
+    if (bill.branch && bill.customer) {
+      fetchLorry(bill.branch, bill.customer, bill.from, bill.to);
     }
-  }, [
-    fetchedBill.branch,
-    fetchedBill.customer,
-    fetchedBill.from,
-    fetchedBill.to,
-  ]);
+  }, [bill.branch?._id, bill.customer?._id, bill.from, bill.to]);
 
   // useEffect(() => {
   //   if (bill.branch && bill.customer) {
@@ -200,7 +191,18 @@ const BillEdit = () => {
           if (message) {
             setHttpError(message);
           } else {
-            setFetchedBill(payload?.data);
+            const { data } = payload || {};
+            const filteredBranch = branches?.find?.(
+              (branch) => branch._id === data.branch
+            );
+            setFetchedBill({ ...(data || {}), branch: filteredBranch });
+            setBill(() => ({
+              ...(data || {}),
+              branch: filteredBranch,
+              customer: data.customer,
+              from: data.from,
+              to: data.to,
+            }));
           }
         })
         .catch(() => {
@@ -212,10 +214,10 @@ const BillEdit = () => {
   }, [billId]);
 
   useEffect(() => {
-    if (fetchedBill._id && fetchedLorryReceipts?.length) {
-      const updatedBill = { ...fetchedBill };
+    if (bill._id && fetchedLorryReceipts?.length) {
+      const updatedBill = { ...bill };
       const updatedLorryReceipts = fetchedLorryReceipts?.map?.((fetchedLR) => {
-        const isInBill = fetchedBill.lrList?.filter?.(
+        const isInBill = bill.lrList?.filter?.(
           (lr) => lr._id === fetchedLR._id
         );
         return {
@@ -231,9 +233,7 @@ const BillEdit = () => {
           );
         });
       }
-      const filteredBranch = branches?.find?.(
-        (branch) => branch._id === fetchedBill.branch
-      );
+
       updatedBill.lrList = updatedBill.lrList?.map?.((billLr) => {
         return (
           updatedLorryReceipts?.filter?.((lr) => lr._id === billLr._id)[0] || ""
@@ -242,10 +242,10 @@ const BillEdit = () => {
       // const customer = customers?.find?.(
       //   (customer) => customer._id === fetchedBill.customer
       // );
-      setBill({ ...updatedBill, branch: filteredBranch });
+      setBill({ ...updatedBill });
       setLorryReceipts(updatedFilteredLorryReceipts);
     }
-  }, [fetchedBill, fetchedLorryReceipts, billId]);
+  }, [fetchedLorryReceipts, billId]);
 
   useEffect(() => {
     const total = +bill.totalFreight + +bill.freight + +bill.localFreight;

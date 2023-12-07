@@ -255,8 +255,8 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
   }
 
   const query = {
-    branch: req.body.branch,
-    consignor: req.body.consignor,
+    // branch: req.body.branch,
+    // consignor: req.body.consignor,
     active: true,
   };
 
@@ -275,6 +275,23 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
     query.date = {
       ...query.date,
       $lte: new Date(newDate)?.toISOString(),
+    };
+  }
+  if (req.body.billId) {
+    query["$or"] = [
+      { assoBill: req.body.billId },
+      {
+        branch: req.body.branch,
+        consignor: req.body.consignor,
+      },
+    ];
+  } else {
+    query = {
+      ...query,
+      ...{
+        branch: req.body.branch,
+        consignor: req.body.consignor,
+      },
     };
   }
   try {

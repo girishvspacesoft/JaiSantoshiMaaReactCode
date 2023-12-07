@@ -6,7 +6,6 @@ const LorryReceipt = require("../models/LorryReceipt");
 const { find, some, forEach } = require("lodash");
 const Branch = require("../models/Branch");
 const Customer = require("../models/Customer");
-const Article = require("../models/Article");
 const {
   DELIVERY_TYPES,
   PAY_TYPES,
@@ -65,8 +64,7 @@ async function init() {
       "_id name city telephone email address"
     ).lean();
 
-    const articles = await Article.find({}, "_id name").lean();
-    for (let index = data.length - 5000; index < data.length; index++) {
+    for (let index = data.length; index < data.length; index++) {
       const lr = data[index];
       const branch = find(branchData, ({ BranchID }) => BranchID === lr.branch);
 
