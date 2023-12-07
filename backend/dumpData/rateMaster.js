@@ -83,7 +83,6 @@ async function init() {
   } finally {
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit(1);
   }
 }
 

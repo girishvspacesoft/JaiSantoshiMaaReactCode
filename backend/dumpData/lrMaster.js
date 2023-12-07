@@ -64,7 +64,7 @@ async function init() {
       "_id name city telephone email address"
     ).lean();
 
-    for (let index = data.length; index < data.length; index++) {
+    for (let index = 0; index < data.length; index++) {
       const lr = data[index];
       const branch = find(branchData, ({ BranchID }) => BranchID === lr.branch);
 
@@ -163,10 +163,8 @@ async function init() {
     console.log("Finished creating LorryReceipts");
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit(1);
   } catch (e) {
     console.log(e.message);
-    process.exit(1);
   }
 }
 

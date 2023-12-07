@@ -112,10 +112,8 @@ async function init() {
     console.log("Finished creating Bills");
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit(1);
   } catch (e) {
     console.log(e.message);
-    process.exit(1);
   }
 }
 

@@ -499,7 +499,7 @@ const loginCtrl = async (req, res, next) => {
                       .status(200)
                       .json({ message: userBranchErr.message });
                   }
-                  if (userBranchData._id) {
+                  if (userBranchData?._id) {
                     updatedUser.branchData = userBranchData;
                     return res.json(updatedUser);
                   }
