@@ -27,7 +27,6 @@ import { LoadingSpinner } from "../../../../ui-controls";
 import {
   downloadLRReport,
   getBranches,
-  getCustomers,
   getLorryReceiptsForReport,
   selectIsLoading,
 } from "./slice/lrStatusSlice";

@@ -958,7 +958,11 @@ const Routing = () => {
           <Route
             path="/reports/pendingLRStatus"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Accounts"
+                path="PATyreReport"
+                process="write"
+              >
                 <PendingLRStockStatus />
               </RequireAuth>
             }
@@ -966,7 +970,11 @@ const Routing = () => {
           <Route
             path="/reports/lorryReceiptStatus"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Sales/Purchase"
+                path="LRStatus"
+                process="write"
+              >
                 <LorryReceiptStatus />
               </RequireAuth>
             }
@@ -974,7 +982,11 @@ const Routing = () => {
           <Route
             path="/reports/challanRegister"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Accounts"
+                path="PetrolReport"
+                process="write"
+              >
                 <ChallanNoteRegister />
               </RequireAuth>
             }
@@ -982,7 +994,11 @@ const Routing = () => {
           <Route
             path="/reports/deliveryStatus"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Accounts"
+                path="MaterialInward"
+                process="write"
+              >
                 <LoadingTripSheet />
               </RequireAuth>
             }
@@ -990,7 +1006,11 @@ const Routing = () => {
           <Route
             path="/reports/addFONumber"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Accounts"
+                path="MaterialOutward"
+                process="write"
+              >
                 <FONumAdd />
               </RequireAuth>
             }
@@ -998,7 +1018,11 @@ const Routing = () => {
           <Route
             path="/reports/transactionDetails"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth
+                parent="Accounts"
+                path="PaymentCollectionReport"
+                process="write"
+              >
                 <LoadingTripSheet />
               </RequireAuth>
             }
@@ -1006,7 +1030,7 @@ const Routing = () => {
           <Route
             path="/reports/userRegister"
             element={
-              <RequireAuth parent="Accounts" path="LoadingSlip" process="write">
+              <RequireAuth parent="Accounts" path="Package" process="write">
                 <UserRegister />
               </RequireAuth>
             }
