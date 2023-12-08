@@ -48,7 +48,7 @@ async function init() {
     const fetchedCustomers = await Customer.find({}, "_id name").lean();
     console.log(data.length + " records");
 
-    for (let index = 1; index < data.length; index++) {
+    for (let index = 0; index < data.length; index++) {
       const bill = data[index];
       const branch = find(
         branchData,
@@ -72,23 +72,29 @@ async function init() {
           }
         }
       });
-
       const fetchedBranch = find(
         fetchedBranches,
         ({ name }) => name === branch?.name
       );
-      const fetchedCustomer = find(
-        fetchedCustomers,
-        ({ name }) => name === customer?.name
-      );
-
-      const billDetail = {
-        ...bill,
-        branch: fetchedBranch?._id,
-        customer: fetchedCustomer?._id,
-        lrList,
-      };
       if (fetchedBranch && lrList.length) {
+        const fetchedCustomer = find(
+          fetchedCustomers,
+          ({ name }) => name === customer?.name
+        );
+        const total =
+          +(bill.totalFreight || 0) +
+          +(bill.freight || 0) +
+          +(bill.localFreight || 0);
+        const grandTotal = total + +(bill.sgst || 0) + +(bill.cgst || 0);
+
+        const billDetail = {
+          ...bill,
+          branch: fetchedBranch?._id,
+          customer: fetchedCustomer?._id,
+          lrList,
+          total,
+          grandTotal,
+        };
         billList = [...billList, billDetail];
 
         const newBill = await Bill.create(billDetail);
