@@ -1,29 +1,26 @@
 const DELIVERY_TYPES = [
   { label: "Door", value: "Door" },
   { label: "Godown", value: "Godown" },
-  { label: "Office", value: "Office" },
+  { label: "Against Consignee Copy", value: "Against Consignee Copy" },
 ];
 const PAY_TYPES = [
-  { label: "TBB", value: "TBB" },
   { label: "ToPay", value: "ToPay" },
   { label: "Paid", value: "Paid" },
+  { label: "TBB", value: "TBB" },
   { label: "FOC", value: "FOC" },
 ];
 const TO_BILLED = [
   { label: "Consignor", value: "Consignor" },
   { label: "Consignee", value: "Consignee" },
-  { label: "Third party", value: "Third party" },
 ];
 const SERVICE_TAX_BY = [
   { label: "Consignor", value: "Consignor" },
   { label: "Consignee", value: "Consignee" },
-  { label: "NA", value: "NA" },
+  { label: "Transporter", value: "Transporter" },
 ];
 const PAY_MODE = [
   { label: "By Cash", value: "By Cash" },
   { label: "By Cheque", value: "By Cheque" },
-  { label: "By NEFT/RTGS", value: "By NEFT/RTGS" },
-  { label: "By Online banking", value: "By Online banking" },
 ];
 
 const PAYMENT_MODES = [

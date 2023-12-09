@@ -143,16 +143,13 @@ async function init() {
         consigneeEmail: fetchedConsignee?.email,
         transactions,
         total,
-        deliveryType:
-          DELIVERY_TYPES[lr.deliveryType]?.value || DELIVERY_TYPES[2]?.value,
+        deliveryType: DELIVERY_TYPES[lr.deliveryType - 1]?.value,
         payType: PAY_TYPES[lr.payType - 1]?.value || "",
         payMode: PAY_MODE[lr.payMode - 1]?.value || "",
         serviceTaxBy: SERVICE_TAX_BY[lr.serviceTaxBy - 1]?.value || "",
         toBilled: TO_BILLED[lr.toBilled - 1]?.value || "",
       };
-      if (fetchedBranch && transactions.length) {
-        lrList = [...lrList, lrDetails];
-      }
+      lrList = [...lrList, lrDetails];
     }
 
     console.log(lrList.length + " records");

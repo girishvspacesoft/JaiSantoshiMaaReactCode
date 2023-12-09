@@ -37,7 +37,6 @@ const SuppliersBill = require("../models/SuppliersBill");
 const Supplier = require("../models/Supplier");
 const Quotation = require("../models/Quotation");
 const sendEmail = require("../controller/email");
-const { ObjectId } = require("mongodb");
 const { translator } = require("./openAI");
 
 const getLorryReceipts = async (req, res, next) => {
@@ -254,7 +253,7 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
     return res.status(200).json({ message: "Consignor ID is required!" });
   }
 
-  const query = {
+  let query = {
     // branch: req.body.branch,
     // consignor: req.body.consignor,
     active: true,
@@ -403,7 +402,19 @@ const addLorryReceipt = async (req, res, next) => {
 
   try {
     const foundLR = await LorryReceipt.findOne(
-      { lrNo: { $regex: abbreviation } },
+      {
+        lrNo: {
+          $regex: abbreviation,
+        },
+        $expr: {
+          $gte: [
+            {
+              $toDate: "$date",
+            },
+            new Date(new Date(req.body.date).getFullYear(), 3, 1),
+          ],
+        },
+      },
       "lrNo",
       { sort: { createdAt: -1 } }
     ).lean();
