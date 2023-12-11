@@ -1483,13 +1483,14 @@ const printLoadingSlip = (req, res) => {
   if (!req.params.id) {
     return res.status(200).json({ message: "Challan ID is required!" });
   }
-  LoadingSlip.findById(req.params.id, (lsErr, lsData) => {
+  LoadingSlip.findById(req.params.id, async (lsErr, lsData) => {
     if (lsErr) {
       return res.status(200).json({ message: lsErr.message });
     }
     let total = 0;
     const lrList = [];
-    lsData.lrList.forEach(async (lr, index) => {
+    for (let index = 0; index < lsData.lrList.length; index++) {
+      const lr = lsData.lrList[index];
       const lrData = await LorryReceipt.findById(lr._id).lean();
       if (lrData) {
         const updatedLR = JSON.parse(JSON.stringify(lrData));
@@ -1508,86 +1509,83 @@ const printLoadingSlip = (req, res) => {
         }
         lrList.push(updatedLR);
       }
-      if (lsData.lrList.length === lrList.length) {
-        const isTwoRowsOccupied = lrList?.some(
-          ({ consigneeAddress, consignorName, consigneeName }) =>
-            consigneeAddress?.length > 20 ||
-            consignorName?.length > 20 ||
-            consigneeName?.length > 20
-        );
-        const blankRows = [];
-        const length =
-          27 - (isTwoRowsOccupied ? lrList.length * 2 : lrList.length);
-        for (let i = 0; i < length; i = i + 1) {
-          blankRows.push({ sr: "-" });
+    }
+
+    const isTwoRowsOccupied = lrList?.some(
+      ({ consigneeAddress, consignorName, consigneeName }) =>
+        consigneeAddress?.length > 20 ||
+        consignorName?.length > 20 ||
+        consigneeName?.length > 20
+    );
+    const blankRows = [];
+    const length = 27 - (isTwoRowsOccupied ? lrList.length * 2 : lrList.length);
+    for (let i = 0; i < length; i = i + 1) {
+      blankRows.push({ sr: "-" });
+    }
+    const logo = base64_encode(
+      path.join(__dirname, "../public/images/logo.png")
+    );
+    const laxmi = base64_encode(
+      path.join(__dirname, "../public/images/laxmi.jpeg")
+    );
+    const templatePath = path.join(__dirname, "../bills/") + "LoadingSlip.html";
+    res.render(
+      templatePath,
+      {
+        info: {
+          lsData: lsData,
+          lsNo: lsData.lsNo,
+          date: getFormattedDate(lsData.date),
+          lrList: lrList.map((data, index) => ({
+            ...data,
+            srNo: index + 1,
+          })),
+          payable: getWordNumber(lsData.totalPayable || 0),
+          freight: lsData.totalFreight?.toFixed(2),
+          advance: lsData.advance?.toFixed(2),
+          rent: lsData.rent?.toFixed(2),
+          totalPayable: lsData.totalPayable?.toFixed(2),
+          blankRows: blankRows,
+          logo: logo,
+          laxmi: laxmi,
+          total: [{ total: total?.toFixed(2) }],
+          createdDate: convertDateFormat(lsData.createdAt),
+          printDate: convertDateFormat(Date.now()),
+        },
+      },
+      (err, HTML) => {
+        const fileName = "JSMT-" + lsData.lsNo;
+        var isWin = process.platform === "win32";
+        let htmlRaw = HTML;
+        if (isWin) {
+          htmlRaw = htmlRaw.replace("0.55", "0.98");
         }
-        const logo = base64_encode(
-          path.join(__dirname, "../public/images/logo.png")
-        );
-        const laxmi = base64_encode(
-          path.join(__dirname, "../public/images/laxmi.jpeg")
-        );
-        const templatePath =
-          path.join(__dirname, "../bills/") + "LoadingSlip.html";
-        res.render(
-          templatePath,
-          {
-            info: {
-              lsData: lsData,
-              lsNo: lsData.lsNo,
-              date: getFormattedDate(lsData.date),
-              lrList: lrList.map((data, index) => ({
-                ...data,
-                srNo: index + 1,
-              })),
-              payable: getWordNumber(lsData.totalPayable || 0),
-              freight: lsData.totalFreight?.toFixed(2),
-              advance: lsData.advance?.toFixed(2),
-              rent: lsData.rent?.toFixed(2),
-              totalPayable: lsData.totalPayable?.toFixed(2),
-              blankRows: blankRows,
-              logo: logo,
-              laxmi: laxmi,
-              total: [{ total: total?.toFixed(2) }],
-              createdDate: convertDateFormat(lsData.createdAt),
-              printDate: convertDateFormat(Date.now()),
-            },
-          },
-          (err, HTML) => {
-            const fileName = "JSMT-" + lsData.lsNo;
-            var isWin = process.platform === "win32";
-            let htmlRaw = HTML;
-            if (isWin) {
-              htmlRaw = htmlRaw.replace("0.55", "0.98");
-            }
-            pdf.create(htmlRaw, options2).toBuffer((buffErr, buffer) => {
-              if (buffErr) {
-                return res.status(200).json({ message: buffErr.message });
-              }
-              const base64String = buffer.toString("base64");
-              if (req.body.email && req.body.email?.trim() !== "") {
-                sendEmail(
-                  req.body.email,
-                  base64String,
-                  `${fileName}.pdf`,
-                  `JSM - Lorry Freight Challan no. ${fileName}`,
-                  `JSM - Lorry Freight Challan no. ${fileName}`,
-                  `<p><b>Hello</b></p><p>Please find attached lorry freight challan</p>`
-                )
-                  .then((response) => {
-                    return res.json({ success: true });
-                  })
-                  .catch((err) => {
-                    return res.status(200).json({ message: err.response });
-                  });
-              } else {
-                return res.json({ file: base64String });
-              }
-            });
+        pdf.create(htmlRaw, options2).toBuffer((buffErr, buffer) => {
+          if (buffErr) {
+            return res.status(200).json({ message: buffErr.message });
           }
-        );
+          const base64String = buffer.toString("base64");
+          if (req.body.email && req.body.email?.trim() !== "") {
+            sendEmail(
+              req.body.email,
+              base64String,
+              `${fileName}.pdf`,
+              `JSM - Lorry Freight Challan no. ${fileName}`,
+              `JSM - Lorry Freight Challan no. ${fileName}`,
+              `<p><b>Hello</b></p><p>Please find attached lorry freight challan</p>`
+            )
+              .then((response) => {
+                return res.json({ success: true });
+              })
+              .catch((err) => {
+                return res.status(200).json({ message: err.response });
+              });
+          } else {
+            return res.json({ file: base64String });
+          }
+        });
       }
-    });
+    );
   });
 };
 
@@ -2176,176 +2174,172 @@ const printBill = (req, res) => {
     if (findBillErr) {
       return res.status(200).json(findBillErr);
     }
-    Customer.findById(data.customer, (findCustErr, custData) => {
+    Customer.findById(data.customer, async (findCustErr, custData) => {
       if (findCustErr) {
         return res.status(200).json(findCustErr);
       }
       const lrList = [];
-      data.lrList.forEach(async (lorryReceipt) => {
+      for (let index = 0; index < data.lrList.length; index++) {
+        const lorryReceipt = data.lrList[index];
+
         const foundLR = await LorryReceipt.findById(lorryReceipt._id).lean();
         const _id = lorryReceipt._id;
         const lr = JSON.parse(JSON.stringify(foundLR));
         lr.formattedDate = getFormattedDate(lr.date);
         lr.formattedLRNo = lr.lrNo;
         lrList.push(lr);
-        if (data.lrList.length === lrList.length) {
-          const updatedLRList = [];
-          let totalWeight = 0;
-          let totalArticles = 0;
-          lrList.forEach((lr) => {
-            lr.transactions.forEach((tr, index) => {
-              totalWeight = totalWeight + +tr.weight;
-              totalArticles = totalArticles + +tr.articleNo;
-              if (index === 0) {
-                updatedLRList.push({
-                  ...lr,
-                  ...tr,
-                  articleNo: tr.articleNo?.toFixed(2),
-                  rate: tr.rate?.toFixed(2),
-                  lrCharges: lr.lrCharges ? lr.lrCharges?.toFixed(2) : "0.00",
-                  hamali: lr.hamali ? lr.hamali?.toFixed(2) : "0.00",
-                  deliveryCharges: lr.deliveryCharges
-                    ? lr.deliveryCharges?.toFixed(2)
-                    : "0.00",
-                  total: (
-                    +tr.freight +
-                    +lr.lrCharges +
-                    +lr.hamali +
-                    +lr.deliveryCharges
-                  )?.toFixed(2),
-                });
+      }
+      const updatedLRList = [];
+      let totalWeight = 0;
+      let totalArticles = 0;
+      lrList.forEach((lr) => {
+        lr.transactions.forEach((tr, index) => {
+          totalWeight = totalWeight + +tr.weight;
+          totalArticles = totalArticles + +tr.articleNo;
+          if (index === 0) {
+            updatedLRList.push({
+              ...lr,
+              ...tr,
+              articleNo: tr.articleNo?.toFixed(2),
+              rate: tr.rate?.toFixed(2),
+              lrCharges: lr.lrCharges ? lr.lrCharges?.toFixed(2) : "0.00",
+              hamali: lr.hamali ? lr.hamali?.toFixed(2) : "0.00",
+              deliveryCharges: lr.deliveryCharges
+                ? lr.deliveryCharges?.toFixed(2)
+                : "0.00",
+              total: (
+                +tr.freight +
+                +lr.lrCharges +
+                +lr.hamali +
+                +lr.deliveryCharges
+              )?.toFixed(2),
+            });
+          } else {
+            updatedLRList.push({
+              ...tr,
+              articleNo: tr.articleNo?.toFixed(2),
+              rate: tr.rate?.toFixed(2),
+              total: tr.freight?.toFixed(2),
+            });
+          }
+        });
+      });
+      let blankRows = [];
+      const isTwoRowsOccupied = lrList?.some(
+        ({ article, to, invoiceNo }) =>
+          to?.length > 15 || article?.length > 15 || invoiceNo?.length > 15
+      );
+      const length =
+        22 -
+        (isTwoRowsOccupied ? updatedLRList.length * 2 : updatedLRList.length);
+      for (let i = 0; i < length; i = i + 1) {
+        blankRows.push({ sr: "-" });
+      }
+      const printData = {
+        billNo: data.billNo,
+        customerName: custData.name?.toUpperCase(),
+        customerAddress: custData.city
+          ? `${custData.address}, ${custData.city}`
+          : custData.address,
+        customerPhone: custData.telephone,
+        customerGst: custData.gstNo,
+        from: lrList[0].from ? lrList[0].from?.toUpperCase() : lrList[0].from,
+        to: lrList[0].to ? lrList[0].to?.toUpperCase() : lrList[0].to,
+        date: getFormattedDate(data.date),
+        bill: data,
+        customer: custData,
+        lrList: lrList,
+        updatedLRList: updatedLRList,
+        blankRows,
+        totalWeight: totalWeight?.toFixed(2),
+        totalArticles: totalArticles?.toFixed(2),
+        freight: (+data.totalFreight)?.toFixed(2),
+        cgst: (+data.cgst)?.toFixed(2),
+        cgstPercent: +data.cgstPercent?.toFixed(2),
+        sgst: (+data.sgst)?.toFixed(2),
+        sgstPercent: +data.sgstPercent?.toFixed(2),
+        grandTotal: (
+          +data.totalFreight +
+          +data.freight +
+          +data.localFreight +
+          +data.sgst +
+          +data.cgst
+        )?.toFixed(2),
+        totalInWords: getWordNumber(
+          +data.totalFreight +
+            +data.freight +
+            +data.localFreight +
+            +data.sgst +
+            +data.cgst || 0
+        ),
+        otherFreight: data.freight,
+        localFreight: data.localFreight,
+      };
+      const laxmi = base64_encode(
+        path.join(__dirname, "../public/images/laxmi.jpeg")
+      );
+      const logo = base64_encode(
+        path.join(__dirname, "../public/images/logo.png")
+      );
+      const templatePath = path.join(__dirname, "../bills/") + "Bill.html";
+      res.render(
+        templatePath,
+        {
+          info: {
+            ...printData,
+            logo,
+            laxmi,
+            createdDate: convertDateFormat(data.createdAt),
+            printDate: convertDateFormat(Date.now()),
+          },
+        },
+        (err, HTML) => {
+          const finalPath = path.join(__dirname, "../bills/bills/");
+          const fileName = "JSMT-" + data.billNo;
+          var isWin = process.platform === "win32";
+          let htmlRaw = HTML;
+          if (isWin) {
+            htmlRaw = htmlRaw.replace("0.55", "0.98");
+          }
+          pdf
+            .create(htmlRaw, options2)
+            // .toFile(
+            //   path.join(finalPath, fileName + ".pdf"),
+            //   (err, result) => {
+            //     if (err) {
+            //       return res.status(200).send({
+            //         message: err,
+            //       });
+            //     }
+            //     return res.send(printData);
+            //   }
+            // );
+            .toBuffer((buffErr, buffer) => {
+              if (buffErr) {
+                return res.status(200).json({ message: buffErr.message });
+              }
+              const base64String = buffer.toString("base64");
+              if (req.body.email && req.body.email?.trim() !== "") {
+                sendEmail(
+                  req.body.email,
+                  base64String,
+                  `${fileName}.pdf`,
+                  `JSM - Bill no. ${fileName}`,
+                  `JSM - Bill no. ${fileName}`,
+                  `<p><b>Hello</b></p><p>Please find attached bill.</p>`
+                )
+                  .then((response) => {
+                    return res.json({ success: true });
+                  })
+                  .catch((err) => {
+                    return res.status(200).json({ message: err.response });
+                  });
               } else {
-                updatedLRList.push({
-                  ...tr,
-                  articleNo: tr.articleNo?.toFixed(2),
-                  rate: tr.rate?.toFixed(2),
-                  total: tr.freight?.toFixed(2),
-                });
+                return res.json({ file: base64String });
               }
             });
-          });
-          let blankRows = [];
-          const isTwoRowsOccupied = lrList?.some(
-            ({ article, to, invoiceNo }) =>
-              to?.length > 15 || article?.length > 15 || invoiceNo?.length > 15
-          );
-          const length =
-            22 -
-            (isTwoRowsOccupied
-              ? updatedLRList.length * 2
-              : updatedLRList.length);
-          for (let i = 0; i < length; i = i + 1) {
-            blankRows.push({ sr: "-" });
-          }
-          const printData = {
-            billNo: data.billNo,
-            customerName: custData.name?.toUpperCase(),
-            customerAddress: custData.city
-              ? `${custData.address}, ${custData.city}`
-              : custData.address,
-            customerPhone: custData.telephone,
-            customerGst: custData.gstNo,
-            from: lrList[0].from
-              ? lrList[0].from?.toUpperCase()
-              : lrList[0].from,
-            to: lrList[0].to ? lrList[0].to?.toUpperCase() : lrList[0].to,
-            date: getFormattedDate(data.date),
-            bill: data,
-            customer: custData,
-            lrList: lrList,
-            updatedLRList: updatedLRList,
-            blankRows,
-            totalWeight: totalWeight?.toFixed(2),
-            totalArticles: totalArticles?.toFixed(2),
-            freight: (+data.totalFreight)?.toFixed(2),
-            cgst: (+data.cgst)?.toFixed(2),
-            cgstPercent: +data.cgstPercent?.toFixed(2),
-            sgst: (+data.sgst)?.toFixed(2),
-            sgstPercent: +data.sgstPercent?.toFixed(2),
-            grandTotal: (
-              +data.totalFreight +
-              +data.freight +
-              +data.localFreight +
-              +data.sgst +
-              +data.cgst
-            )?.toFixed(2),
-            totalInWords: getWordNumber(
-              +data.totalFreight +
-                +data.freight +
-                +data.localFreight +
-                +data.sgst +
-                +data.cgst || 0
-            ),
-            otherFreight: data.freight,
-            localFreight: data.localFreight,
-          };
-          const laxmi = base64_encode(
-            path.join(__dirname, "../public/images/laxmi.jpeg")
-          );
-          const logo = base64_encode(
-            path.join(__dirname, "../public/images/logo.png")
-          );
-          const templatePath = path.join(__dirname, "../bills/") + "Bill.html";
-          res.render(
-            templatePath,
-            {
-              info: {
-                ...printData,
-                logo,
-                laxmi,
-                createdDate: convertDateFormat(data.createdAt),
-                printDate: convertDateFormat(Date.now()),
-              },
-            },
-            (err, HTML) => {
-              const finalPath = path.join(__dirname, "../bills/bills/");
-              const fileName = "JSMT-" + data.billNo;
-              var isWin = process.platform === "win32";
-              let htmlRaw = HTML;
-              if (isWin) {
-                htmlRaw = htmlRaw.replace("0.55", "0.98");
-              }
-              pdf
-                .create(htmlRaw, options2)
-                // .toFile(
-                //   path.join(finalPath, fileName + ".pdf"),
-                //   (err, result) => {
-                //     if (err) {
-                //       return res.status(200).send({
-                //         message: err,
-                //       });
-                //     }
-                //     return res.send(printData);
-                //   }
-                // );
-                .toBuffer((buffErr, buffer) => {
-                  if (buffErr) {
-                    return res.status(200).json({ message: buffErr.message });
-                  }
-                  const base64String = buffer.toString("base64");
-                  if (req.body.email && req.body.email?.trim() !== "") {
-                    sendEmail(
-                      req.body.email,
-                      base64String,
-                      `${fileName}.pdf`,
-                      `JSM - Bill no. ${fileName}`,
-                      `JSM - Bill no. ${fileName}`,
-                      `<p><b>Hello</b></p><p>Please find attached bill.</p>`
-                    )
-                      .then((response) => {
-                        return res.json({ success: true });
-                      })
-                      .catch((err) => {
-                        return res.status(200).json({ message: err.response });
-                      });
-                  } else {
-                    return res.json({ file: base64String });
-                  }
-                });
-            }
-          );
         }
-      });
+      );
     });
   });
 };
@@ -2358,68 +2352,68 @@ const exportToExcelBill = (req, res) => {
     if (findBillErr) {
       return res.status(200).json(findBillErr);
     }
-    Customer.findById(data.customer, (findCustErr, custData) => {
+    Customer.findById(data.customer, async (findCustErr, custData) => {
       if (findCustErr) {
         return res.status(200).json(findCustErr);
       }
       const lrList = [];
-      data.lrList.forEach(async (lorryReceipt) => {
+      for (let index = 0; index < data.lrList.length; index++) {
+        const lorryReceipt = data.lrList[index];
+
         const foundLR = await LorryReceipt.findById(lorryReceipt._id).lean();
         const _id = lorryReceipt._id;
         const lr = JSON.parse(JSON.stringify(foundLR));
         lr.formattedDate = getFormattedDate(lr.date);
         lr.formattedLRNo = lr.lrNo;
         lrList.push(lr);
-        if (data.lrList.length === lrList.length) {
-          const updatedLRList = [];
-          let totalWeight = 0;
-          let totalArticles = 0;
-          lrList.forEach((lr) => {
-            lr.transactions.forEach((tr, index) => {
-              totalWeight = totalWeight + +tr.weight;
-              totalArticles = totalArticles + +tr.articleNo;
-              if (index === 0) {
-                updatedLRList.push({
-                  ...lr,
-                  ...tr,
-                  articleNo: tr.articleNo?.toFixed(2),
-                  rate: tr.rate?.toFixed(2),
-                  lrCharges: lr.lrCharges ? lr.lrCharges?.toFixed(2) : "0.00",
-                  hamali: lr.hamali ? lr.hamali?.toFixed(2) : "0.00",
-                  deliveryCharges: lr.deliveryCharges
-                    ? lr.deliveryCharges?.toFixed(2)
-                    : "0.00",
-                  total: (
-                    +tr.freight +
-                    +lr.lrCharges +
-                    +lr.hamali +
-                    +lr.deliveryCharges
-                  )?.toFixed(2),
-                });
-              } else {
-                updatedLRList.push({
-                  ...tr,
-                  articleNo: tr.articleNo?.toFixed(2),
-                  rate: tr.rate?.toFixed(2),
-                  total: tr.freight?.toFixed(2),
-                });
-              }
+      }
+      const updatedLRList = [];
+      let totalWeight = 0;
+      let totalArticles = 0;
+      lrList.forEach((lr) => {
+        lr.transactions.forEach((tr, index) => {
+          totalWeight = totalWeight + +tr.weight;
+          totalArticles = totalArticles + +tr.articleNo;
+          if (index === 0) {
+            updatedLRList.push({
+              ...lr,
+              ...tr,
+              articleNo: tr.articleNo?.toFixed(2),
+              rate: tr.rate?.toFixed(2),
+              lrCharges: lr.lrCharges ? lr.lrCharges?.toFixed(2) : "0.00",
+              hamali: lr.hamali ? lr.hamali?.toFixed(2) : "0.00",
+              deliveryCharges: lr.deliveryCharges
+                ? lr.deliveryCharges?.toFixed(2)
+                : "0.00",
+              total: (
+                +tr.freight +
+                +lr.lrCharges +
+                +lr.hamali +
+                +lr.deliveryCharges
+              )?.toFixed(2),
             });
-          });
+          } else {
+            updatedLRList.push({
+              ...tr,
+              articleNo: tr.articleNo?.toFixed(2),
+              rate: tr.rate?.toFixed(2),
+              total: tr.freight?.toFixed(2),
+            });
+          }
+        });
+      });
 
-          const workbook = exportBillToXlsx(updatedLRList);
-          res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          );
-          res.setHeader(
-            "Content-Disposition",
-            "attachment; filename=" + "bill.xlsx"
-          );
-          return workbook.xlsx.write(res).then(() => {
-            res.status(200).end();
-          });
-        }
+      const workbook = exportBillToXlsx(updatedLRList);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=" + "bill.xlsx"
+      );
+      return workbook.xlsx.write(res).then(() => {
+        res.status(200).end();
       });
     });
   });
