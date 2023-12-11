@@ -1507,6 +1507,14 @@ const printLoadingSlip = (req, res) => {
         if (updatedLR.payType === "ToPay") {
           total += +updatedLR.total;
         }
+        if (!lrData.consigneeNameMr) {
+          const [name, conName] = await Promise.all([
+            translator(lrData.consigneeName),
+            translator(lrData.consignorName),
+          ]);
+          updatedLR.consignorNameMr = name;
+          updatedLR.consigneeNameMr = conName;
+        }
         lrList.push(updatedLR);
       }
     }
