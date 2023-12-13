@@ -147,9 +147,20 @@ const getLorryReceiptsWithCount = async (req, res, next) => {
 
     if (search) {
       const searchText = new RegExp(search);
+      let isoDate = search;
+      const date = new Date(search);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       param["$or"] = [
         { lrNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
+        {
+          date: { $regex: new RegExp(isoDate), $options: "i" },
+        },
         { consignorName: { $regex: searchText, $options: "i" } },
         { consigneeName: { $regex: searchText, $options: "i" } },
         { from: { $regex: searchText, $options: "i" } },
@@ -1154,8 +1165,19 @@ const getLoadingSlips = async (req, res, next) => {
 
     if (search) {
       const searchText = new RegExp(search);
+      let isoDate = search;
+      const date = new Date(search);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       param["$or"] = [
-        { date: { $regex: searchText, $options: "i" } },
+        {
+          date: { $regex: new RegExp(isoDate), $options: "i" },
+        },
         { vehicleNo: { $regex: searchText, $options: "i" } },
         { fromName: { $regex: searchText, $options: "i" } },
         { toName: { $regex: searchText, $options: "i" } },
@@ -1954,8 +1976,19 @@ const getBills = async (req, res, next) => {
 
     if (search) {
       const searchText = new RegExp(search);
+      let isoDate = search;
+      const date = new Date(search);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       param["$or"] = [
-        { date: { $regex: searchText, $options: "i" } },
+        {
+          date: { $regex: new RegExp(isoDate), $options: "i" },
+        },
         { ["customer.name"]: { $regex: searchText, $options: "i" } },
         ...(!isNaN(parseFloat(search))
           ? [{ total: parseFloat(search) }, { billNo: parseFloat(search) }]
@@ -3057,9 +3090,20 @@ const getLorryReceiptsForReport = async (req, res, next) => {
         consignor = "";
       if (query.searchText) {
         const searchText = new RegExp(query.searchText);
+        let isoDate = query.searchText;
+        const date = new Date(query.searchText);
+        if (date instanceof Date && !isNaN(date)) {
+          const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+          const date2 = new Date(updatedDate).toISOString().split("T")[0];
+          if (date2?.split("-")[0]?.length === 4) {
+            isoDate = date2;
+          }
+        }
         allSearch = [
           { lrNo: { $regex: searchText, $options: "i" } },
-          { date: { $regex: searchText, $options: "i" } },
+          {
+            date: { $regex: new RegExp(isoDate), $options: "i" },
+          },
           { invoiceNo: { $regex: searchText, $options: "i" } },
           { consignorName: { $regex: searchText, $options: "i" } },
           { consigneeName: { $regex: searchText, $options: "i" } },
@@ -3147,12 +3191,23 @@ const getPendingLorryReceiptForReport = async (req, res, next) => {
 
       if (req.body.query.searchText) {
         const searchText = new RegExp(req.body.query.searchText);
+        let isoDate = req.body.query.searchText;
+        const date = new Date(req.body.query.searchText);
+        if (date instanceof Date && !isNaN(date)) {
+          const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+          const date2 = new Date(updatedDate).toISOString().split("T")[0];
+          if (date2?.split("-")[0]?.length === 4) {
+            isoDate = date2;
+          }
+        }
         param["$and"] = [
           { $or: [{ deliveryDate: null }, { deliveryDate: "" }] },
           {
             $or: [
               { lrNo: { $regex: searchText, $options: "i" } },
-              { date: { $regex: searchText, $options: "i" } },
+              {
+                date: { $regex: new RegExp(isoDate), $options: "i" },
+              },
               { consignorName: { $regex: searchText, $options: "i" } },
               { consigneeName: { $regex: searchText, $options: "i" } },
               ...(!isNaN(parseInt(req.body.query.searchText))
@@ -3228,9 +3283,20 @@ const getLoadedLorryReceiptForReport = async (req, res, next) => {
 
       if (query.searchText) {
         const searchText = new RegExp(query.searchText);
+        let isoDate = query.searchText;
+        const date = new Date(query.searchText);
+        if (date instanceof Date && !isNaN(date)) {
+          const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+          const date2 = new Date(updatedDate).toISOString().split("T")[0];
+          if (date2?.split("-")[0]?.length === 4) {
+            isoDate = date2;
+          }
+        }
         allSearch = [
           { lrNo: { $regex: searchText, $options: "i" } },
-          { date: { $regex: searchText, $options: "i" } },
+          {
+            date: { $regex: new RegExp(isoDate), $options: "i" },
+          },
           { consignorName: { $regex: searchText, $options: "i" } },
           { consigneeName: { $regex: searchText, $options: "i" } },
           { from: { $regex: searchText, $options: "i" } },
@@ -3310,9 +3376,20 @@ const downloadLRReport = (req, res) => {
       consignor = "";
     if (req.body.query.searchText) {
       const searchText = new RegExp(req.body.query.searchText);
+      let isoDate = req.body.query.searchText;
+      const date = new Date(req.body.query.searchText);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       allSearch = [
         { lrNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
+        {
+          date: { $regex: new RegExp(isoDate), $options: "i" },
+        },
         { invoiceNo: { $regex: searchText, $options: "i" } },
         { consignorName: { $regex: searchText, $options: "i" } },
         { consigneeName: { $regex: searchText, $options: "i" } },
@@ -3432,12 +3509,23 @@ const downloadPendingLRReport = (req, res) => {
 
     if (req.body.query.searchText) {
       const searchText = new RegExp(req.body.query.searchText);
+      let isoDate = req.body.query.searchText;
+      const date = new Date(req.body.query.searchText);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       query["$and"] = [
         { $or: [{ deliveryDate: null }, { deliveryDate: "" }] },
         {
           $or: [
             { lrNo: { $regex: searchText, $options: "i" } },
-            { date: { $regex: searchText, $options: "i" } },
+            {
+              date: { $regex: new RegExp(isoDate), $options: "i" },
+            },
             { consignorName: { $regex: searchText, $options: "i" } },
             { consigneeName: { $regex: searchText, $options: "i" } },
             ...(!isNaN(parseInt(req.body.query.searchText))
@@ -3542,9 +3630,20 @@ const downloadLoadedLRReport = (req, res) => {
 
     if (req.body.query.searchText) {
       const searchText = new RegExp(req.body.query.searchText);
+      let isoDate = req.body.query.searchText;
+      const date = new Date(req.body.query.searchText);
+      if (date instanceof Date && !isNaN(date)) {
+        const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+        const date2 = new Date(updatedDate).toISOString().split("T")[0];
+        if (date2?.split("-")[0]?.length === 4) {
+          isoDate = date2;
+        }
+      }
       allSearch = [
         { lrNo: { $regex: searchText, $options: "i" } },
-        { date: { $regex: searchText, $options: "i" } },
+        {
+          date: { $regex: new RegExp(isoDate), $options: "i" },
+        },
         { consignorName: { $regex: searchText, $options: "i" } },
         { consigneeName: { $regex: searchText, $options: "i" } },
         { from: { $regex: searchText, $options: "i" } },
@@ -3757,9 +3856,20 @@ const getLoadingSlipForReport = async (req, res, next) => {
       }
       if (query.searchText) {
         const searchText = new RegExp(query.searchText);
+        let isoDate = query.searchText;
+        const date = new Date(query.searchText);
+        if (date instanceof Date && !isNaN(date)) {
+          const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+          const date2 = new Date(updatedDate).toISOString().split("T")[0];
+          if (date2?.split("-")[0]?.length === 4) {
+            isoDate = date2;
+          }
+        }
         param["$or"] = [
           { lsNo: { $regex: searchText, $options: "i" } },
-          { date: { $regex: searchText, $options: "i" } },
+          {
+            date: { $regex: new RegExp(isoDate), $options: "i" },
+          },
           { vehicleOwner: { $regex: searchText, $options: "i" } },
           { vehicleNo: { $regex: searchText, $options: "i" } },
           ...(!isNaN(parseInt(query.searchText))
