@@ -14,7 +14,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-
 import { LoadingSpinner } from "../../../../ui-controls";
 import {
   base64ToObjectURL,
@@ -142,7 +141,8 @@ const LoadingSlipEdit = () => {
   const [, setUpdatedLRList] = useState([]);
   const [isLocalMemo, setIsLocalMemo] = useState(false);
   const [selectedLR, setSelectedLR] = useState([]);
-  const [serachLr, setSearchLr] = useState("");
+  const [searchLr, setSearchLr] = useState("");
+  const [lrFilter, setFilter] = useState({ from: "", to: "" });
   const [updatedLR, setUpdatedLR] = useState([]);
   const dispatch = useDispatch();
 
@@ -172,8 +172,9 @@ const LoadingSlipEdit = () => {
       dispatch(
         getLorryReceipts({
           branches,
-          search: serachLr,
+          search: searchLr,
           lsId,
+          ...(lrFilter || {}),
         })
       )
         .then(({ payload = {} }) => {
@@ -198,7 +199,7 @@ const LoadingSlipEdit = () => {
           );
         });
     }
-  }, [lsId, serachLr]);
+  }, [lsId, searchLr, lrFilter]);
 
   useEffect(() => {
     const err = Object.keys(formErrors);
@@ -243,7 +244,9 @@ const LoadingSlipEdit = () => {
             const driverIndex = drivers
               ?.map?.((driver) => driver._id)
               ?.indexOf?.(driver);
-            response.driver = drivers[driverIndex];
+            response.driver =
+              drivers[driverIndex] ||
+              drivers?.find(({ name }) => name === response.driverName);
             const fromIndex = places
               ?.map?.((place) => place._id)
               ?.indexOf?.(from);
@@ -257,6 +260,10 @@ const LoadingSlipEdit = () => {
             response.branch = branches?.find?.(
               ({ _id }) => _id === response.branch
             );
+            response.totalFreight = response.totalFreight || 0;
+            response.rent = response.rent || 0;
+            response.advance = response.advance || 0;
+            response.totalPayable = response.totalPayable || 0;
             setLoadingSlip(response);
             setFetchedLoadingSlip(response);
           }
@@ -308,6 +315,18 @@ const LoadingSlipEdit = () => {
     });
   };
 
+  const dateChangeHandler = (name, date) => {
+    setFilter((currState) => {
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return {
+        ...currState,
+        [name]: new Date(date),
+        ...(name === "from" ? { to: nextDay } : {}),
+      };
+    });
+  };
+
   const submitHandler = (e, isSaveAndPrint) => {
     e.preventDefault();
     if (!validateForm(loadingSlip)) {
@@ -334,8 +353,8 @@ const LoadingSlipEdit = () => {
                         const fileURL = base64ToObjectURL(payload?.data.file);
                         if (fileURL) {
                           const winPrint = window.open(fileURL, "_blank");
-                          winPrint.focus();
-                          winPrint.print();
+                          winPrint?.focus();
+                          winPrint?.print();
                           setHttpError("");
                           setFormErrors(initialErrorState);
                           setLoadingSlip(initialState);
@@ -747,11 +766,7 @@ const LoadingSlipEdit = () => {
                     variant="outlined"
                     label="Vehicle owner address"
                     error={formErrors.vehicleOwnerAddress.invalid}
-<<<<<<< HEAD
-                    value={loadingSlip.vehicleOwnerAddress}
-=======
                     value={loadingSlip.vehicleOwnerAddress || ""}
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
                     onChange={inputChangeHandler}
                     name="vehicleOwnerAddress"
                     id="vehicleOwnerAddress"
@@ -942,6 +957,8 @@ const LoadingSlipEdit = () => {
             setSearchLr={setSearchLr}
             updatedLR={updatedLR}
             setUpdatedLR={setUpdatedLR}
+            dateChangeHandler={dateChangeHandler}
+            lrFilter={lrFilter}
           />
           <Divider sx={{ margin: "20px 0" }} />
           <form action="" onSubmit={submitHandler} id="loadingSlipForm">
@@ -953,7 +970,7 @@ const LoadingSlipEdit = () => {
                     size="small"
                     variant="outlined"
                     label="Total freight"
-                    value={loadingSlip.totalFreight || ""}
+                    value={loadingSlip.totalFreight}
                     error={formErrors.totalFreight.invalid}
                     onChange={inputChangeHandler}
                     onInput={validateNumber}
@@ -973,7 +990,7 @@ const LoadingSlipEdit = () => {
                     size="small"
                     variant="outlined"
                     label="Rent"
-                    value={loadingSlip.rent || ""}
+                    value={loadingSlip.rent}
                     error={formErrors.rent.invalid}
                     onChange={inputChangeHandler}
                     onInput={validateNumber}
@@ -991,7 +1008,7 @@ const LoadingSlipEdit = () => {
                     size="small"
                     variant="outlined"
                     label="Advance"
-                    value={loadingSlip.advance || ""}
+                    value={loadingSlip.advance}
                     onChange={inputChangeHandler}
                     onInput={validateNumber}
                     name="advance"
@@ -1012,7 +1029,7 @@ const LoadingSlipEdit = () => {
                     type="number"
                     variant="outlined"
                     label="Total payable"
-                    value={loadingSlip.totalPayable || ""}
+                    value={loadingSlip.totalPayable}
                     onChange={inputChangeHandler}
                     name="totalPayable"
                     id="totalPayable"

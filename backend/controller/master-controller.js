@@ -772,7 +772,6 @@ const getCustomersForDrop = async (req, res, next) => {
       param.name = { $regex: new RegExp(search?.trim?.()), $options: "i" };
     }
     const customers = await Customer.find(param)
-      .sort("-createdAt")
       .limit(pageSize)
       .select("name _id address city telephone email") // Only select necessary fields
       .lean();

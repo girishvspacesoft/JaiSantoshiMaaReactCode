@@ -204,10 +204,7 @@ const LorryReceipts = () => {
         limit: paginationModel.pageSize ? paginationModel.pageSize : 100,
         page: paginationModel.page + 1,
       },
-<<<<<<< HEAD
-=======
       search: searchData,
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     };
     dispatch(getLorryReceiptsWithCount(requestObject))
       .then(({ payload = {} }) => {

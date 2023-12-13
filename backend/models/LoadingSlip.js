@@ -33,13 +33,10 @@ const LoadingSlip = new Schema(
     driverName: {
       type: String,
       //required: true,
-<<<<<<< HEAD
-=======
     },
     driver: {
       type: String,
       //required: true,
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     },
     licenseNo: {
       type: String,

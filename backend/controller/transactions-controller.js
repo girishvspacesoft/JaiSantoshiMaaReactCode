@@ -40,7 +40,7 @@ const sendEmail = require("../controller/email");
 const { translator } = require("./openAI");
 
 const getLorryReceipts = async (req, res, next) => {
-  const { branch, search, lsId, branches } = req.body;
+  const { branch, search, lsId, branches, from, to } = req.body;
   const query = { active: true };
 
   if (branch) {
@@ -54,8 +54,29 @@ const getLorryReceipts = async (req, res, next) => {
   } else if (lsId) {
     query.associatedLS = lsId;
   }
+  if (from) {
+    const date = new Date(from);
+    const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+    const newDate = new Date(updatedDate)?.setUTCHours(0, 0, 0, 000);
+    query.date = {
+      ...query.date,
+      $gte: new Date(newDate)?.toISOString(),
+    };
+  }
+  if (to) {
+    const date = new Date(to);
+    const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+    const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+    query.date = {
+      ...query.date,
+      $lte: new Date(newDate)?.toISOString(),
+    };
+  }
   try {
-    const lorryReceipts = await LorryReceipt.find(query).limit(100).lean();
+    const lorryReceipts = await LorryReceipt.find(query)
+      .sort("-createdAt")
+      .limit(100)
+      .lean();
     res.json(lorryReceipts);
   } catch (lrError) {
     return res.status(200).json({
@@ -67,7 +88,7 @@ const getLorryReceipts = async (req, res, next) => {
 const getLorryReceiptsForLS = async (req, res, next) => {
   try {
     const pageSize = 100; // Adjust this based on your requirements
-    const { search, branch } = req.body;
+    const { search, branch, from, to } = req.body;
     const param = { active: true, associatedLS: "" };
     if (search) {
       param.lrNo = { $regex: new RegExp(search?.trim?.()), $options: "i" };
@@ -75,7 +96,28 @@ const getLorryReceiptsForLS = async (req, res, next) => {
     if (branch) {
       param.branch = branch;
     }
-    const lorryReceipts = await LorryReceipt.find(param).limit(pageSize).lean();
+    if (from) {
+      const date = new Date(from);
+      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+      const newDate = new Date(updatedDate)?.setUTCHours(0, 0, 0, 000);
+      param.date = {
+        ...param.date,
+        $gte: new Date(newDate)?.toISOString(),
+      };
+    }
+    if (to) {
+      const date = new Date(to);
+      const updatedDate = new Date(date).setDate(date?.getDate() + 1);
+      const newDate = new Date(updatedDate).setUTCHours(23, 59, 59, 999);
+      param.date = {
+        ...param.date,
+        $lte: new Date(newDate)?.toISOString(),
+      };
+    }
+    const lorryReceipts = await LorryReceipt.find(param)
+      .sort("-createdAt")
+      .limit(pageSize)
+      .lean();
 
     res.json({
       lorryReceipts,
@@ -195,24 +237,6 @@ const getLRAckWithCount = async (req, res, next) => {
       ];
     }
 
-<<<<<<< HEAD
-  LorryReceipt.find(query)
-    // .limit(limit)
-    // .skip(skip)
-    .sort("deliveryDate")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        return res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-          isLastPage: false,
-        });
-      }
-=======
     const lorryReceipts = await LorryReceipt.find(param)
       .sort("-createdAt")
       .skip(start)
@@ -229,7 +253,6 @@ const getLRAckWithCount = async (req, res, next) => {
     res.status(200).json({
       message: "Error fetching lorry receipts!",
       error: error.message,
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     });
   }
 };
@@ -295,8 +318,6 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
       $lte: new Date(newDate)?.toISOString(),
     };
   }
-<<<<<<< HEAD
-=======
   if (req.body.billId) {
     query["$or"] = [
       { assoBill: req.body.billId },
@@ -314,9 +335,10 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
       },
     };
   }
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   try {
-    const lorryReceipts = await LorryReceipt.find(query).lean();
+    const lorryReceipts = await LorryReceipt.find(query)
+      .sort("-createdAt")
+      .lean();
     res.json(lorryReceipts);
   } catch (error) {
     return res.status(200).json({
@@ -424,9 +446,6 @@ const addLorryReceipt = async (req, res, next) => {
 
   try {
     const foundLR = await LorryReceipt.findOne(
-<<<<<<< HEAD
-      { lrNo: { $regex: abbreviation } },
-=======
       {
         lrNo: {
           $regex: abbreviation,
@@ -440,7 +459,6 @@ const addLorryReceipt = async (req, res, next) => {
           ],
         },
       },
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
       "lrNo",
       { sort: { createdAt: -1 } }
     ).lean();
@@ -641,7 +659,6 @@ const generateLrPdf = async (data, req, res, isSend, isUpdate, isView) => {
     LRData.from = LRData.fromMr;
     LRData.consignorName = LRData.consignorNameMr;
   }
-<<<<<<< HEAD
 
   let totalArticles = 0;
   let totalWeight = 0;
@@ -649,15 +666,6 @@ const generateLrPdf = async (data, req, res, isSend, isUpdate, isView) => {
   LRData.total = LRData.total - LRData.lrCharges + 10;
   LRData.billtyCharges = isWithoutAmount ? "-" : "10.00";
 
-=======
-
-  let totalArticles = 0;
-  let totalWeight = 0;
-  let totalChargeWeight = 0;
-  LRData.total = LRData.total - LRData.lrCharges + 10;
-  LRData.billtyCharges = isWithoutAmount ? "-" : "10.00";
-
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   for (let index = 0; index < LRData.transactions.length; index++) {
     const tr = LRData.transactions[index];
     if (tr.articleNo) {
@@ -1604,75 +1612,9 @@ const printLoadingSlip = (req, res) => {
         if (isWin) {
           htmlRaw = htmlRaw.replace("0.55", "0.98");
         }
-<<<<<<< HEAD
-        const logo = base64_encode(
-          path.join(__dirname, "../public/images/logo.png")
-        );
-        const laxmi = base64_encode(
-          path.join(__dirname, "../public/images/laxmi.jpeg")
-        );
-        const templatePath =
-          path.join(__dirname, "../bills/") + "LoadingSlip.html";
-        res.render(
-          templatePath,
-          {
-            info: {
-              lsData: lsData,
-              lsNo: lsData.lsNo,
-              date: getFormattedDate(lsData.date),
-              lrList: lrList.map((data, index) => ({
-                ...data,
-                srNo: index + 1,
-              })),
-              payable: getWordNumber(lsData.totalPayable || 0),
-              freight: lsData.totalFreight?.toFixed(2),
-              advance: lsData.advance?.toFixed(2),
-              rent: lsData.rent?.toFixed(2),
-              totalPayable: lsData.totalPayable?.toFixed(2),
-              blankRows: blankRows,
-              logo: logo,
-              laxmi: laxmi,
-              total: [{ total: total?.toFixed(2) }],
-              createdDate: convertDateFormat(lsData.createdAt),
-              printDate: convertDateFormat(Date.now()),
-            },
-          },
-          (err, HTML) => {
-            const fileName = "JSMT-" + lsData.lsNo;
-            var isWin = process.platform === "win32";
-            let htmlRaw = HTML;
-            if (isWin) {
-              htmlRaw = htmlRaw.replace("0.55", "0.98");
-            }
-            pdf.create(htmlRaw, options2).toBuffer((buffErr, buffer) => {
-              if (buffErr) {
-                return res.status(200).json({ message: buffErr.message });
-              }
-              const base64String = buffer.toString("base64");
-              if (req.body.email && req.body.email?.trim() !== "") {
-                sendEmail(
-                  req.body.email,
-                  base64String,
-                  `${fileName}.pdf`,
-                  `JSM - Lorry Freight Challan no. ${fileName}`,
-                  `JSM - Lorry Freight Challan no. ${fileName}`,
-                  `<p><b>Hello</b></p><p>Please find attached lorry freight challan</p>`
-                )
-                  .then((response) => {
-                    return res.json({ success: true });
-                  })
-                  .catch((err) => {
-                    return res.status(200).json({ message: err.response });
-                  });
-              } else {
-                return res.json({ file: base64String });
-              }
-            });
-=======
         pdf.create(htmlRaw, options2).toBuffer((buffErr, buffer) => {
           if (buffErr) {
             return res.status(200).json({ message: buffErr.message });
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
           }
           const base64String = buffer.toString("base64");
           if (req.body.email && req.body.email?.trim() !== "") {
@@ -2060,6 +2002,7 @@ const getBillsByCustomer = (req, res, next) => {
   }
 
   Bill.find({ customer: req.body.customer, branch: req.body.branch })
+    .sort("-createAt")
     .lean()
     .limit(1000)
     .exec((error, bills) => {
@@ -2331,89 +2274,6 @@ const printBill = (req, res) => {
               rate: tr.rate?.toFixed(2),
               total: tr.freight?.toFixed(2),
             });
-<<<<<<< HEAD
-          });
-          let blankRows = [];
-          const isTwoRowsOccupied = lrList?.some(
-            ({ article, to, invoiceNo }) =>
-              to?.length > 15 || article?.length > 15 || invoiceNo?.length > 15
-          );
-          const length =
-            22 -
-            (isTwoRowsOccupied
-              ? updatedLRList.length * 2
-              : updatedLRList.length);
-          for (let i = 0; i < length; i = i + 1) {
-            blankRows.push({ sr: "-" });
-          }
-          const printData = {
-            billNo: data.billNo,
-            customerName: custData.name?.toUpperCase(),
-            customerAddress: custData.city
-              ? `${custData.address}, ${custData.city}`
-              : custData.address,
-            customerPhone: custData.telephone,
-            customerGst: custData.gstNo,
-            from: lrList[0].from
-              ? lrList[0].from?.toUpperCase()
-              : lrList[0].from,
-            to: lrList[0].to ? lrList[0].to?.toUpperCase() : lrList[0].to,
-            date: getFormattedDate(data.date),
-            bill: data,
-            customer: custData,
-            lrList: lrList,
-            updatedLRList: updatedLRList,
-            blankRows,
-            totalWeight: totalWeight?.toFixed(2),
-            totalArticles: totalArticles?.toFixed(2),
-            freight: (+data.totalFreight)?.toFixed(2),
-            cgst: (+data.cgst)?.toFixed(2),
-            cgstPercent: +data.cgstPercent?.toFixed(2),
-            sgst: (+data.sgst)?.toFixed(2),
-            sgstPercent: +data.sgstPercent?.toFixed(2),
-            grandTotal: (
-              +data.totalFreight +
-              +data.freight +
-              +data.localFreight +
-              +data.sgst +
-              +data.cgst
-            )?.toFixed(2),
-            totalInWords: getWordNumber(
-              +data.totalFreight +
-                +data.freight +
-                +data.localFreight +
-                +data.sgst +
-                +data.cgst || 0
-            ),
-            otherFreight: data.freight,
-            localFreight: data.localFreight,
-          };
-          const laxmi = base64_encode(
-            path.join(__dirname, "../public/images/laxmi.jpeg")
-          );
-          const logo = base64_encode(
-            path.join(__dirname, "../public/images/logo.png")
-          );
-          const templatePath = path.join(__dirname, "../bills/") + "Bill.html";
-          res.render(
-            templatePath,
-            {
-              info: {
-                ...printData,
-                logo,
-                laxmi,
-                createdDate: convertDateFormat(data.createdAt),
-                printDate: convertDateFormat(Date.now()),
-              },
-            },
-            (err, HTML) => {
-              const finalPath = path.join(__dirname, "../bills/bills/");
-              const fileName = "JSMT-" + data.billNo;
-              var isWin = process.platform === "win32";
-              let htmlRaw = HTML;
-              if (isWin) {
-                htmlRaw = htmlRaw.replace("0.55", "0.98");
-=======
           }
         });
       });
@@ -2529,7 +2389,6 @@ const printBill = (req, res) => {
                   });
               } else {
                 return res.json({ file: base64String });
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
               }
             });
         }
@@ -2750,6 +2609,8 @@ const getSupplierBills = (req, res, next) => {
   }
   SuppliersBill.find(
     { supplier: req.params.supplier, active: true },
+    {},
+    { sort: { createdAt: -1 } },
     (err, data) => {
       if (err) {
         res.status(200).json({ message: err.message });
@@ -3225,21 +3086,6 @@ const getLorryReceiptsForReport = async (req, res, next) => {
       }
     }
 
-<<<<<<< HEAD
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-        });
-      }
-=======
     const lorryReceipts = await LorryReceipt.find(param)
       .sort("-createdAt")
       .skip(start)
@@ -3253,7 +3099,6 @@ const getLorryReceiptsForReport = async (req, res, next) => {
   } catch (lrError) {
     return res.status(200).json({
       message: "Error fetching lorry receipts!",
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     });
   }
 };
@@ -3340,20 +3185,6 @@ const getPendingLorryReceiptForReport = async (req, res, next) => {
   }
 };
 
-<<<<<<< HEAD
-  LorryReceipt.find(query)
-    .sort("-createdAt")
-    .exec((lrError, lorryReceipts) => {
-      if (lrError) {
-        return res.status(200).json({
-          message: "Error fetching lorry receipts!",
-        });
-      } else {
-        res.json({
-          lorryReceipts: lorryReceipts.slice(start, end),
-          count: lorryReceipts?.length,
-        });
-=======
 const getLoadedLorryReceiptForReport = async (req, res, next) => {
   try {
     const { pagination, query } = req.body;
@@ -3406,7 +3237,6 @@ const getLoadedLorryReceiptForReport = async (req, res, next) => {
           { to: { $regex: searchText, $options: "i" } },
           { payType: { $regex: searchText, $options: "i" } },
         ];
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
       }
 
       if (query.payType) {
@@ -3812,6 +3642,7 @@ const getAllLRAck = (req, res) => {
     query = { ...query, branch: req.body.branch };
   }
   LorryReceipt.find(query)
+    .sort("-createdAt")
     .lean()
     .exec((lrError, lorryReceipts) => {
       if (lrError) {
@@ -4078,18 +3909,6 @@ const getChallanForReport = async (req, res, next) => {
           as: "lorryReceipts",
         },
       },
-<<<<<<< HEAD
-    },
-    { $match: query },
-    {
-      $unset: ["list", "lrList", "supplierPayments"],
-    },
-    { $sort: { createdAt: -1 } },
-  ]).exec((lsError, loadingSlips) => {
-    if (lsError) {
-      return res.status(200).json({
-        message: "Error fetching lorry receipt challans!",
-=======
       { $match: param },
       { $sort: { createdAt: -1 } },
       { $skip: start },
@@ -4154,7 +3973,6 @@ const getChallanForReport = async (req, res, next) => {
       );
       return workbook.xlsx.write(res).then(() => {
         res.status(200).end();
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
       });
     } else {
       const count = await LoadingSlip.countDocuments(param);

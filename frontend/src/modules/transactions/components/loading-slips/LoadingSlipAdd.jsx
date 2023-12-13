@@ -136,8 +136,10 @@ const LoadingSlipAdd = () => {
   const [httpError, setHttpError] = useState("");
   const [isLocalMemo, setIsLocalMemo] = useState(false);
   const [page, setPage] = useState(1);
-  const [serachLr, setSearchLr] = useState("");
+  const [searchLr, setSearchLr] = useState("");
   const [filteredLR, setFilteredLR] = useState([]);
+  const [lrFilter, setFilter] = useState({ from: "", to: "" });
+
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
@@ -166,7 +168,8 @@ const LoadingSlipAdd = () => {
         getLorryReceiptsForLS({
           branch: branches,
           page,
-          search: serachLr,
+          search: searchLr,
+          ...(lrFilter || {}),
         })
       )
         .then(({ payload = {} }) => {
@@ -174,7 +177,7 @@ const LoadingSlipAdd = () => {
           if (message) {
             setHttpError(message);
           } else {
-            const { lorryReceipts, isLastPage } = payload?.data || {};
+            const { lorryReceipts } = payload?.data || {};
             const prevCheckedList = filteredLR.filter(({ checked }) => checked);
 
             const latestList = [
@@ -184,9 +187,6 @@ const LoadingSlipAdd = () => {
               ),
             ];
             setLorryReceipts(() => [...latestList]);
-            if (!isLastPage) {
-              setPage((page) => page + 1);
-            }
           }
         })
         .catch(() => {
@@ -195,7 +195,7 @@ const LoadingSlipAdd = () => {
           );
         });
     }
-  }, [serachLr, page]);
+  }, [searchLr, lrFilter]);
 
   useEffect(() => {
     const err = Object.keys(formErrors);
@@ -249,7 +249,17 @@ const LoadingSlipAdd = () => {
       };
     });
   };
-
+  const dateChangeHandler = (name, date) => {
+    setFilter((currState) => {
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return {
+        ...currState,
+        [name]: new Date(date),
+        ...(name === "from" ? { to: nextDay } : {}),
+      };
+    });
+  };
   const submitHandler = (e, isSaveAndPrint) => {
     e.preventDefault();
     if (!validateForm(loadingSlip)) {
@@ -283,8 +293,8 @@ const LoadingSlipAdd = () => {
                         const fileURL = base64ToObjectURL(payload?.data.file);
                         if (fileURL) {
                           const winPrint = window.open(fileURL, "_blank");
-                          winPrint.focus();
-                          winPrint.print();
+                          winPrint?.focus();
+                          winPrint?.print();
                           setHttpError("");
                           setFormErrors(initialErrorState);
                           setLoadingSlip(initialState);
@@ -879,6 +889,8 @@ const LoadingSlipAdd = () => {
             setSearchLr={setSearchLr}
             filteredLR={filteredLR}
             setFilteredLR={setFilteredLR}
+            dateChangeHandler={dateChangeHandler}
+            lrFilter={lrFilter}
           />
           <Divider sx={{ margin: "20px 0" }} />
           <form action="" onSubmit={submitHandler} id="loadingSlipForm">

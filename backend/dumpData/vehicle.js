@@ -42,11 +42,8 @@ async function init() {
       "oldVehicleOwner.csv"
     );
     const oldVehicleOwnerData = await csv().fromFile(oldVehicleOwnerfilePath);
-<<<<<<< HEAD
-=======
     const vehicleTypes = await VehicleType.find({}, "_id type").lean();
     const suppliers = await Supplier.findOne({}, "_id name").lean();
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     let records = 0;
     for (let index = 0; index < vehicleData.length; index++) {
       let param = vehicleData[index];
@@ -60,18 +57,6 @@ async function init() {
       );
       let vehicleType = {};
       if (type) {
-<<<<<<< HEAD
-        vehicleType = await VehicleType.findOne(
-          { type: type.VehicleType },
-          "_id"
-        ).lean();
-      }
-      const ownerData = await Supplier.findOne(
-        { name: owner?.SupplierName },
-        "_id"
-      ).lean();
-
-=======
         vehicleType = find(
           vehicleTypes,
           ({ type: typeName }) => typeName === type.VehicleType
@@ -81,7 +66,6 @@ async function init() {
         suppliers,
         ({ name }) => name === owner?.SupplierName
       );
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
       param = {
         ...param,
         owner: ownerData?._id,
@@ -98,10 +82,6 @@ async function init() {
     console.log("Database connection closed");
   } catch (e) {
     console.log("errrrrrrr" + e.message);
-<<<<<<< HEAD
-    process.exit();
-=======
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   }
 }
 

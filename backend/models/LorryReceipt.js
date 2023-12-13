@@ -83,8 +83,6 @@ const LorryReceipt = new Schema(
     totalFreight: {
       type: Number,
       //required: true,
-<<<<<<< HEAD
-=======
     },
     statisticalCharges: {
       type: Number,
@@ -97,7 +95,6 @@ const LorryReceipt = new Schema(
     panNo: {
       type: String,
       //required: true,
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     },
     hamali: {
       type: Number,
@@ -108,8 +105,6 @@ const LorryReceipt = new Schema(
     lrCharges: {
       type: Number,
       //required: true,
-<<<<<<< HEAD
-=======
     },
     weightCharges: {
       type: Number,
@@ -122,7 +117,6 @@ const LorryReceipt = new Schema(
     collectionCharges: {
       type: Number,
       //required: true,
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     },
     total: {
       type: Number,

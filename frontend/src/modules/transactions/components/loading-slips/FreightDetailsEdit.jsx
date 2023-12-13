@@ -3,7 +3,10 @@ import { DataGrid } from "@mui/x-data-grid";
 import Checkbox from "@mui/material/Checkbox";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import { Button, Divider, Grid, TextField } from "@mui/material";
+import { Button, Divider, FormControl, Grid, TextField } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 const FreightDetailsEdit = ({
   loadingSlip,
@@ -16,6 +19,8 @@ const FreightDetailsEdit = ({
   updatedLR,
   setUpdatedLR,
   setSearchLr,
+  lrFilter,
+  dateChangeHandler,
 }) => {
   const columns = [
     { field: "_id", headerName: "Id" },
@@ -43,7 +48,7 @@ const FreightDetailsEdit = ({
       flex: 1,
       type: "number",
       renderCell: (params) => {
-        return params.row.payType?.toLowerCase() === "topay" ? (
+        return params.row.payType?.toUpperCase() === "topay" ? (
           <strong>₹ {Number(params.row.total)?.toFixed?.(2)}</strong>
         ) : (
           "-"
@@ -53,10 +58,6 @@ const FreightDetailsEdit = ({
   ];
 
   const [initial, setInitial] = useState(true);
-<<<<<<< HEAD
-  const [updatedLR, setUpdatedLR] = useState([]);
-=======
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   const [sortedLR, setSortedLR] = useState([]);
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
@@ -83,7 +84,7 @@ const FreightDetailsEdit = ({
       let _total = 0;
       const list = updatedLR?.filter?.((lr) => {
         if (lr.checked) {
-          _total += lr.payType?.toLowerCase() === "topay" ? lr.total : 0;
+          _total += lr.payType?.toUpperCase() === "topay" ? lr.total : 0;
         }
         return lr.checked;
       });
@@ -115,7 +116,7 @@ const FreightDetailsEdit = ({
     e.preventDefault();
     let _total = 0;
     const submitted = updatedLR.find(
-      (lr) => search?.toLowerCase() === lr.lrNo?.toLowerCase()
+      (lr) => search?.toUpperCase() === lr.lrNo?.toUpperCase()
     );
     let list = [...sortedLR];
     if (submitted && !list.some((lr) => lr.lrNo === submitted.lrNo)) {
@@ -124,9 +125,9 @@ const FreightDetailsEdit = ({
     }
     setSelectedLR(
       list?.filter?.((lr) => {
-        if (lr.checked || search?.toLowerCase() === lr.lrNo?.toLowerCase()) {
+        if (lr.checked || search?.toUpperCase() === lr.lrNo?.toUpperCase()) {
           lr.checked = true;
-          _total += lr.payType?.toLowerCase() === "topay" ? lr.total : 0;
+          _total += lr.payType?.toUpperCase() === "topay" ? lr.total : 0;
         }
         return lr.checked;
       })
@@ -137,14 +138,14 @@ const FreightDetailsEdit = ({
 
   const searchChangeHandler = (e) => {
     const search = e.target.value
-      ? e.target.value?.trim?.()?.toLowerCase?.()
+      ? e.target.value?.trim?.()?.toUpperCase?.()
       : e.target.value;
     setSearch(search);
     // if (search) {
     //   setUpdatedLR((currState) => {
     //     const updatedLR = currState;
     //     updatedLR?.forEach?.((lr) => {
-    //       lr.show = lr.lrNo?.toLowerCase?.().includes?.(search);
+    //       lr.show = lr.lrNo?.toUpperCase?.().includes?.(search);
     //     });
     //     return updatedLR;
     //   });
@@ -215,11 +216,7 @@ const FreightDetailsEdit = ({
               size="small"
               variant="outlined"
               label="Filter LR"
-<<<<<<< HEAD
-              value={search}
-=======
-              value={search||''}
->>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
+              value={search || ""}
               fullWidth
               onChange={searchChangeHandler}
               name="search"
@@ -230,6 +227,46 @@ const FreightDetailsEdit = ({
             <h4 className=" text-inline" style={{ paddingTop: "5px" }}>
               {totalRecord} Out of {selected} selected
             </h4>
+          </Grid>
+          <Grid item xs={2}>
+            <FormControl fullWidth>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="From"
+                  inputFormat="DD/MM/YYYY"
+                  value={lrFilter.from || null}
+                  disableFuture={true}
+                  maxDate={lrFilter.to}
+                  onChange={dateChangeHandler.bind(null, "from")}
+                  inputProps={{
+                    readOnly: true,
+                  }}
+                  renderInput={(params) => (
+                    <TextField name="from" size="small" {...params} />
+                  )}
+                />
+              </LocalizationProvider>
+            </FormControl>
+          </Grid>
+          <Grid item xs={2}>
+            <FormControl fullWidth>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="To"
+                  inputFormat="DD/MM/YYYY"
+                  value={lrFilter.to || null}
+                  disableFuture={true}
+                  minDate={lrFilter.from}
+                  onChange={dateChangeHandler.bind(null, "to")}
+                  inputProps={{
+                    readOnly: true,
+                  }}
+                  renderInput={(params) => (
+                    <TextField name="to" size="small" {...params} />
+                  )}
+                />
+              </LocalizationProvider>
+            </FormControl>
           </Grid>
         </Grid>
         <FormGroup className="checkboxGroup">{renderItems}</FormGroup>
