@@ -9,7 +9,6 @@ const LorryReceipt = new Schema(
     },
     lrNo: {
       type: String,
-      unique: true,
     },
     date: {
       type: String,
@@ -84,6 +83,21 @@ const LorryReceipt = new Schema(
     totalFreight: {
       type: Number,
       //required: true,
+<<<<<<< HEAD
+=======
+    },
+    statisticalCharges: {
+      type: Number,
+      //required: true,
+    },
+    serviceTaxCharges: {
+      type: Number,
+      //required: true,
+    },
+    panNo: {
+      type: String,
+      //required: true,
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     },
     hamali: {
       type: Number,
@@ -94,6 +108,21 @@ const LorryReceipt = new Schema(
     lrCharges: {
       type: Number,
       //required: true,
+<<<<<<< HEAD
+=======
+    },
+    weightCharges: {
+      type: Number,
+      //required: true,
+    },
+    oscCharges: {
+      type: Number,
+      //required: true,
+    },
+    collectionCharges: {
+      type: Number,
+      //required: true,
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     },
     total: {
       type: Number,
@@ -205,15 +234,17 @@ const LorryReceipt = new Schema(
     },
     createdBy: {
       type: String,
-      required: function () {
-        return !this.updatedBy;
-      },
+      default: "System",
+      // required: function () {
+      //   return !this.updatedBy;
+      // },
     },
     updatedBy: {
       type: String,
-      required: function () {
-        return !this.createdBy;
-      },
+      default: "System",
+      // required: function () {
+      //   return !this.createdBy;
+      // },
     },
   },
   {
@@ -222,6 +253,6 @@ const LorryReceipt = new Schema(
   }
 );
 
-LorryReceipt.index({ vehicleNo: "text" });
+// LorryReceipt.index({ vehicleNo: "text" });
 
 module.exports = mongoose.model("LorryReceipt", LorryReceipt);

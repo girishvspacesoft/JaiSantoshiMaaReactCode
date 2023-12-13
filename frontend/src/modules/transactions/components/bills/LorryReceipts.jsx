@@ -169,6 +169,7 @@ const LorryReceipts = ({
             </LocalizationProvider>
           </FormControl>
         </div>
+<<<<<<< HEAD
         {lorryReceipts?.length > 0 && (
           <div className="grid-item">
             <FormControlLabel
@@ -196,6 +197,33 @@ const LorryReceipts = ({
             />
           </div>
         )}
+=======
+        <div className="grid-item">
+          <FormControlLabel
+            className="groupCheckbox"
+            key="selectAll"
+            control={
+              <Checkbox
+                name={selectAll}
+                size="small"
+                checked={selectAll}
+                onChange={selectAllChangeHandler}
+              />
+            }
+            label={
+              <span
+                style={{
+                  fontSize: "0.9em",
+                  display: "inline-block",
+                  lineHeight: "1em",
+                }}
+              >
+                Select all
+              </span>
+            }
+          />
+        </div>
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
       </div>
 
       <form action="" onSubmit={submitHandler} id="lrSelectionForm">

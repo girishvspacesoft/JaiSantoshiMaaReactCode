@@ -24,10 +24,8 @@ async function init() {
     console.log("Finished creating Suppliers");
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit();
   } catch (e) {
     console.log(e);
-    process.exit();
   }
 }
 

@@ -41,10 +41,12 @@ async function init() {
     console.log("Finished creating customers");
     mongoose.connection.close();
     console.log("Database connection closed");
-    process.exit();
   } catch (e) {
     console.log(e.message);
+<<<<<<< HEAD
     process.exit();
+=======
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   }
 }
 

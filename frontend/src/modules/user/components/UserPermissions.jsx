@@ -675,7 +675,7 @@ const UserPermissions = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td>BilledLRStatus</td>
+                      <td>Lorry Receipt Register</td>
                       <td>
                         <Switch
                           name="Accounts_BilledLRStatus_write"
@@ -683,7 +683,7 @@ const UserPermissions = () => {
                           onChange={handleSwitchChange}
                         />
                       </td>
-                      <td>LoadingTripsheet</td>
+                      <td>Loading Trip Sheet Register</td>
                       <td>
                         <Switch
                           name="Accounts_LoadingSlip_write"
@@ -691,12 +691,49 @@ const UserPermissions = () => {
                           onChange={handleSwitchChange}
                         />
                       </td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
+                      <td>Pending LR Stock Status</td>
+                      <td>
+                        <Switch
+                          name="Accounts_PATyreReport_write"
+                          checked={permissions.Accounts.PATyreReport.write}
+                          onChange={handleSwitchChange}
+                        />
+                      </td>
+
+                      <td>Lorry Receipt Status</td>
+                      <td>
+                        <Switch
+                          name="Sales/Purchase_LRStatus_write"
+                          checked={permissions["Sales/Purchase"].LRStatus.write}
+                          onChange={handleSwitchChange}
+                        />
+                      </td>
+                      <td>Add FO Number</td>
+                      <td>
+                        <Switch
+                          name="Accounts_MaterialOutward_write"
+                          checked={permissions.Accounts.MaterialOutward.write}
+                          onChange={handleSwitchChange}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Challan Register</td>
+                      <td>
+                        <Switch
+                          name="Accounts_PetrolReport_write"
+                          checked={permissions.Accounts.PetrolReport.write}
+                          onChange={handleSwitchChange}
+                        />
+                      </td>
+                      <td>User Register</td>
+                      <td>
+                        <Switch
+                          name="Accounts_Package_write"
+                          checked={permissions.Accounts.Package.write}
+                          onChange={handleSwitchChange}
+                        />
+                      </td>
                     </tr>
                     <tr>
                       <td colSpan={10} className={classes.head}>

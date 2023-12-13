@@ -5,7 +5,18 @@ import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { Button, Divider, Grid, TextField } from "@mui/material";
 
+<<<<<<< HEAD
 const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
+=======
+const FreightDetails = ({
+  loadingSlip,
+  setLoadingSlip,
+  lorryReceipts,
+  setSearchLr,
+  filteredLR,
+  setFilteredLR,
+}) => {
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   const columns = [
     { field: "_id", headerName: "Id" },
     {
@@ -41,7 +52,6 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
     },
   ];
 
-  const [filteredLR, setFilteredLR] = useState([]);
   const [selectedLR, setSelectedLR] = useState([]);
   const [sortedLR, setSortedLR] = useState([]);
   const [search, setSearch] = useState("");
@@ -57,8 +67,8 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
           weight += +transaction.weight;
         });
         lr.weight = weight;
-        lr.checked = false;
-        lr.show = true;
+        lr.checked = lr?.checked || false;
+        lr.show = lr.lrNo.includes?.(search);
       });
       setFilteredLR(updatedLorryReceipts);
     }
@@ -108,6 +118,14 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
     );
     setTotal(_total);
     setLoadingSlip((prevState) => ({ ...prevState, totalFreight: _total }));
+<<<<<<< HEAD
+=======
+  };
+
+  const fetchLrs = (str) => {
+    const search = str.trim?.();
+    setSearchLr(search);
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   };
 
   const searchChangeHandler = (e) => {
@@ -115,23 +133,24 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
       ? e.target.value?.trim?.()?.toLowerCase?.()
       : e.target.value;
     setSearch(search);
-    if (search) {
-      setFilteredLR((currState) => {
-        const updatedLR = currState;
-        updatedLR?.forEach?.((lr) => {
-          lr.show = lr.lrNo?.toLowerCase?.().includes?.(search);
-        });
-        return updatedLR;
-      });
-    } else {
-      setFilteredLR((currState) => {
-        const updatedLR = currState;
-        updatedLR?.forEach?.((lr) => {
-          lr.show = true;
-        });
-        return updatedLR;
-      });
-    }
+    // if (search) {
+    //   setFilteredLR((currState) => {
+    //     const updatedLR = currState;
+    //     updatedLR?.forEach?.((lr) => {
+    //       lr.show = lr.lrNo?.toLowerCase?.().includes?.(search);
+    //     });
+    //     return updatedLR;
+    //   });
+    // } else {
+    //   setFilteredLR((currState) => {
+    //     const updatedLR = currState;
+    //     updatedLR?.forEach?.((lr) => {
+    //       lr.show = true;
+    //     });
+    //     return updatedLR;
+    //   });
+    // }
+    fetchLrs(e.target.value);
   };
 
   let totalRecord = 0,
@@ -154,7 +173,7 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
             <Checkbox
               name={lr._id}
               size="small"
-              checked={lr.checked}
+              checked={lr.checked || false}
               onChange={(e) => inputChangeHandler(e, index)}
             />
           }
@@ -186,7 +205,11 @@ const FreightDetails = ({ loadingSlip, setLoadingSlip, lorryReceipts }) => {
                 size="small"
                 variant="outlined"
                 label="Filter LR"
+<<<<<<< HEAD
                 value={search}
+=======
+                value={search || ""}
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
                 fullWidth
                 onChange={searchChangeHandler}
                 name="search"

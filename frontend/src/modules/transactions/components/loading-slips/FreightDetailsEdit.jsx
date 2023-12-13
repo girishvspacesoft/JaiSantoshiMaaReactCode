@@ -13,6 +13,9 @@ const FreightDetailsEdit = ({
   handleSelectedLr,
   selectedLR,
   setSelectedLR,
+  updatedLR,
+  setUpdatedLR,
+  setSearchLr,
 }) => {
   const columns = [
     { field: "_id", headerName: "Id" },
@@ -50,7 +53,10 @@ const FreightDetailsEdit = ({
   ];
 
   const [initial, setInitial] = useState(true);
+<<<<<<< HEAD
   const [updatedLR, setUpdatedLR] = useState([]);
+=======
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
   const [sortedLR, setSortedLR] = useState([]);
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
@@ -64,7 +70,8 @@ const FreightDetailsEdit = ({
           weight += +transaction.weight;
         });
         lr.weight = weight;
-        lr.show = true;
+        lr.checked = lr?.checked || false;
+        lr.show = lr.lrNo.includes?.(search);
       });
 
       setUpdatedLR(updatedLorryReceipts);
@@ -133,23 +140,29 @@ const FreightDetailsEdit = ({
       ? e.target.value?.trim?.()?.toLowerCase?.()
       : e.target.value;
     setSearch(search);
-    if (search) {
-      setUpdatedLR((currState) => {
-        const updatedLR = currState;
-        updatedLR?.forEach?.((lr) => {
-          lr.show = lr.lrNo?.toLowerCase?.().includes?.(search);
-        });
-        return updatedLR;
-      });
-    } else {
-      setUpdatedLR((currState) => {
-        const updatedLR = currState;
-        updatedLR?.forEach?.((lr) => {
-          lr.show = true;
-        });
-        return updatedLR;
-      });
-    }
+    // if (search) {
+    //   setUpdatedLR((currState) => {
+    //     const updatedLR = currState;
+    //     updatedLR?.forEach?.((lr) => {
+    //       lr.show = lr.lrNo?.toLowerCase?.().includes?.(search);
+    //     });
+    //     return updatedLR;
+    //   });
+    // } else {
+    //   setUpdatedLR((currState) => {
+    //     const updatedLR = currState;
+    //     updatedLR?.forEach?.((lr) => {
+    //       lr.show = true;
+    //     });
+    //     return updatedLR;
+    //   });
+    // }
+    fetchLrs(e.target.value);
+  };
+
+  const fetchLrs = (str) => {
+    const search = str.trim?.();
+    setSearchLr(search);
   };
 
   let totalRecord = 0,
@@ -172,7 +185,7 @@ const FreightDetailsEdit = ({
             <Checkbox
               name={lr._id}
               size="small"
-              checked={lr.checked}
+              checked={lr.checked || false}
               onChange={(e) => inputChangeHandler(e, index)}
             />
           }
@@ -202,7 +215,11 @@ const FreightDetailsEdit = ({
               size="small"
               variant="outlined"
               label="Filter LR"
+<<<<<<< HEAD
               value={search}
+=======
+              value={search||''}
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
               fullWidth
               onChange={searchChangeHandler}
               name="search"

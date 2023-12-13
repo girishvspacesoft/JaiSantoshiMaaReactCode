@@ -33,9 +33,9 @@ export function addLoadingSlip(requestObject) {
   return fetchFromApiServer("POST", url, requestObject);
 }
 
-export function fetchLorryReceiptsForLS({ branch, page }) {
+export function fetchLorryReceiptsForLS(requestObject) {
   const url = `api/transactions/getLorryReceiptsForLS`;
-  return fetchFromApiServer("POST", url, { branch, page });
+  return fetchFromApiServer("POST", url, requestObject);
 }
 
 export function printLoadingSlip({ id, email }) {
@@ -43,9 +43,9 @@ export function printLoadingSlip({ id, email }) {
   return fetchFromApiServer("POST", url, { email: email });
 }
 
-export function fetchLorryReceipts(branches) {
+export function fetchLorryReceipts(requestObject) {
   const url = `api/transactions/getLorryReceipts`;
-  return fetchFromApiServer("POST", url, { branches: branches });
+  return fetchFromApiServer("POST", url, requestObject);
 }
 
 export function removeLoadingSlip(id) {

@@ -35,13 +35,19 @@ mongoose
         if (collections.length === index + 1) {
           console.log("all the collections are dropped");
           mongoose.connection.close();
+<<<<<<< HEAD
           process.exit();
+=======
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
         }
       });
     } else {
       console.log("No collection found");
       mongoose.connection.close();
+<<<<<<< HEAD
       process.exit();
+=======
+>>>>>>> 61ebb17bfce3db4c896f7668cd49bc44203937b9
     }
   })
   .catch((e) => {
