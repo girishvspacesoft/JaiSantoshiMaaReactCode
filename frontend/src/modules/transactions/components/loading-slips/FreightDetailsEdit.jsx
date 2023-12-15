@@ -72,7 +72,7 @@ const FreightDetailsEdit = ({
         });
         lr.weight = weight;
         lr.checked = lr?.checked || false;
-        lr.show = lr.lrNo.includes?.(search);
+        lr.show = search ? lr.lrNo?.toUpperCase?.().includes?.(search) : true;
       });
 
       setUpdatedLR(updatedLorryReceipts);

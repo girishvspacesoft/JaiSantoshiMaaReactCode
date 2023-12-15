@@ -397,19 +397,6 @@ const LoadingSlipAdd = () => {
         message: "At least one lorry receipt is required",
       };
     }
-    if (formData.totalFreight < 0 || !formData.totalFreight) {
-      errors.totalFreight = {
-        invalid: true,
-        message: "Total freight is invalid",
-      };
-    }
-    if (formData.rent < 0 || !formData.rent) {
-      errors.rent = { invalid: true, message: "Rent is invalid" };
-    }
-    if (formData.advance < 0 || !formData.advance) {
-      errors.advance = { invalid: true, message: "Advance is invalid" };
-    }
-
     let validationErrors = false;
     for (const key in errors) {
       if (errors[key].invalid === true) {

@@ -24,7 +24,7 @@ const Branch = new Schema(
     },
     printer: {
       type: String,
-      required: true,
+      // required: true,
     },
     active: {
       type: Boolean,

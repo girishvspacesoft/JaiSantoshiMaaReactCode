@@ -279,6 +279,7 @@ const getAllLorryReceiptsWithCount = (req, res, next) => {
   const end = req.body.pagination.page * limit;
 
   LorryReceipt.find({ active: true })
+    .lean()
     // .limit(limit)
     // .skip(skip)
     .sort("-createdAt")
@@ -2075,10 +2076,13 @@ const getBillsByCustomer = (req, res, next) => {
     return res.status(200).json({ message: "Customer ID is required!" });
   }
 
-  Bill.find({ customer: req.body.customer, branch: req.body.branch })
-    .sort("-createAt")
+  Bill.find({
+    customer: req.body.customer,
+    branch: req.body.branch,
+    active: true,
+  })
+    .sort("-createdAt")
     .lean()
-    .limit(1000)
     .exec((error, bills) => {
       if (error) {
         return res.status(200).json({
@@ -3104,7 +3108,7 @@ const getLorryReceiptsForReport = async (req, res, next) => {
     if (!pagination.page || !pagination.limit) {
       return res
         .status(200)
-        .json({ message: "Branch ID & pagination is required!" });
+        .json({ message: "Pagination inputs not provided!" });
     }
 
     const param = { active: true };
