@@ -38,6 +38,7 @@ const Supplier = require("../models/Supplier");
 const Quotation = require("../models/Quotation");
 const sendEmail = require("../controller/email");
 const { translator } = require("./openAI");
+const Place = require("../models/Place");
 
 const getLorryReceipts = async (req, res, next) => {
   const { branch, search, lsId, branches, from, to } = req.body;
@@ -550,6 +551,9 @@ const addLorryReceipt = async (req, res, next) => {
     if (foundConsignor && foundConsignee) {
       await createLorryReceipt(formattedLR, req, res);
     } else if (!foundConsignor && !foundConsignee) {
+      const { from, to } = await createFromOrTo(consignor.city, consignee.city);
+      consignor.city = from;
+      consignee.city = to;
       const createdConsignor = await Customer.create(consignor);
       const createdConsignee = await Customer.create(consignee);
       if (createdConsignor && createdConsignee) {
@@ -567,6 +571,8 @@ const addLorryReceipt = async (req, res, next) => {
       }
       await createLorryReceipt(formattedLR, req, res);
     } else if (foundConsignor && !foundConsignee) {
+      const { from, to } = await createFromOrTo("", consignee.city);
+      consignee.city = to;
       const createdConsignee = await Customer.create(consignee);
       if (createdConsignee) {
         req.body.consignee = createdConsignee._id;
@@ -577,6 +583,8 @@ const addLorryReceipt = async (req, res, next) => {
       }
       await createLorryReceipt(formattedLR, req, res);
     } else if (!foundConsignor && foundConsignee) {
+      const { from, to } = await createFromOrTo(consignor.city, "");
+      consignor.city = from;
       const createdConsignor = await Customer.create(consignor);
 
       if (createdConsignor) {
@@ -591,6 +599,32 @@ const addLorryReceipt = async (req, res, next) => {
   } catch (e) {
     return res.status(200).json({ message: e.message });
   }
+};
+
+const createFromOrTo = async (_from, _to) => {
+  let from = !_from
+    ? {}
+    : await Place.findOne({
+        name: { $regex: getRegex(_from?.trim?.()), $options: "i" },
+      }).lean();
+  let to = !_to
+    ? {}
+    : await Place.findOne({
+        name: { $regex: getRegex(_to?.trim?.()), $options: "i" },
+      }).lean();
+
+  if (!from) {
+    from = await Place.create({
+      name: _from?.toUpperCase(),
+    });
+  }
+  if (!to) {
+    to = await Place.create({
+      name: _to?.toUpperCase(),
+    });
+  }
+
+  return { from: from?._id, to: to?._id };
 };
 
 const removeLorryReceipt = (req, res, next) => {
@@ -1004,7 +1038,12 @@ const updateLorryReceipt = async (req, res, next) => {
             createdBy: req.body.createdBy,
             email: req.body.consigneeEmail,
           });
-
+          const { from, to } = await createFromOrTo(
+            consignor.city,
+            consignee.city
+          );
+          consignor.city = from;
+          consignee.city = to;
           const createdConsignor = await Customer.create(consignor);
           const createdConsignee = await Customer.create(consignee);
           if (createdConsignor && createdConsignee) {
@@ -1031,7 +1070,8 @@ const updateLorryReceipt = async (req, res, next) => {
             createdBy: req.body.createdBy,
             email: req.body.consigneeEmail,
           });
-
+          const { from, to } = await createFromOrTo("", consignee.city);
+          consignee.city = to;
           const createdConsignee = await Customer.create(consignee);
           if (createdConsignee) {
             updateLorryReceipt({
@@ -1054,7 +1094,8 @@ const updateLorryReceipt = async (req, res, next) => {
             createdBy: req.body.createdBy,
             email: req.body.consignorEmail,
           });
-
+          const { from, to } = await createFromOrTo(consignor.city, "");
+          consignor.city = from;
           const createdConsignor = await Customer.create(consignor);
           if (createdConsignor) {
             updateLorryReceipt({
@@ -2264,6 +2305,13 @@ const printBill = (req, res) => {
       if (findCustErr) {
         return res.status(200).json(findCustErr);
       }
+
+      let city = custData?.city;
+      if (city) {
+        city = await Place.findById(city, "name").lean();
+        city = city?.name;
+      }
+
       const lrList = [];
       for (let index = 0; index < data.lrList.length; index++) {
         const lorryReceipt = data.lrList[index];
@@ -2324,8 +2372,8 @@ const printBill = (req, res) => {
       const printData = {
         billNo: data.billNo,
         customerName: custData.name?.toUpperCase(),
-        customerAddress: custData.city
-          ? `${custData.address}, ${custData.city}`
+        customerAddress: city
+          ? `${custData.address}, ${city}`
           : custData.address,
         customerPhone: custData.telephone,
         customerGst: custData.gstNo,
@@ -4385,6 +4433,7 @@ const getFormattedDateString = (receivedDate) => {
 
   return `${formattedDay} ${monthNames[month]} ${year}`;
 };
+const getRegex = (str) => `^${str}$`;
 
 const convertDateFormat = (date = new Date()) => {
   const day = new Date(date).toLocaleString("en-GB", {

@@ -768,13 +768,59 @@ const getCustomersForDrop = async (req, res, next) => {
     const pageSize = 100; // Adjust this based on your requirements
     const search = req.body.search;
     const param = { active: true };
+    let sort = [];
     if (search) {
       param.name = { $regex: new RegExp(search?.trim?.()), $options: "i" };
+      sort = [{ $sort: { name: 1 } }];
     }
-    const customers = await Customer.find(param)
-      .limit(pageSize)
-      .select("name _id address city telephone email") // Only select necessary fields
-      .lean();
+    // const customers = await Customer.find(param)
+    //   .limit(pageSize)
+    //   .select("name _id address city telephone email") // Only select necessary fields
+    //   .lean();
+
+    const customers = await Customer.aggregate([
+      {
+        $addFields: {
+          cityId: {
+            $cond: {
+              if: {
+                $ne: ["$city", null],
+              },
+              then: { $toObjectId: "$city" },
+              else: "$city",
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "place",
+          localField: "cityId",
+          foreignField: "_id",
+          as: "cityObj",
+        },
+      },
+      { $unwind: { path: "$cityObj", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          city: "$cityObj.name",
+        },
+      },
+      { $match: param },
+      { $limit: pageSize },
+      ...sort,
+      {
+        $project: {
+          _id: 1,
+          city: 1,
+          cityId: 1,
+          address: 1,
+          telephone: 1,
+          name: 1,
+          email: 1,
+        },
+      },
+    ]);
     res.json(customers);
   } catch (error) {
     res.status(200).json({
@@ -802,22 +848,66 @@ const getCustomersWithPagination = async (req, res, next) => {
           { telephone: { $regex: searchText, $options: "i" } },
         ];
       } else {
-        param[searchType] = searchText;
+        param[searchType] = { $regex: searchText, $options: "i" };
       }
     }
-    const customers = await Customer.find(
-      param,
-      "_id city address telephone name email"
-    )
-      .sort("-createdAt")
-      .skip(start)
-      .limit(limit)
-      .lean();
+    // const customers = await Customer.find(
+    //   param,
+    //   "_id city address telephone name email"
+    // )
+    //   .sort("-createdAt")
+    //   .skip(start)
+    //   .limit(limit)
+    //   .lean();
+
+    const customers = await Customer.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $addFields: {
+          cityId: {
+            $cond: {
+              if: {
+                $ne: ["$city", null],
+              },
+              then: { $toObjectId: "$city" },
+              else: "$city",
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "place",
+          localField: "cityId",
+          foreignField: "_id",
+          as: "cityObj",
+        },
+      },
+      { $unwind: { path: "$cityObj", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          city: "$cityObj.name",
+        },
+      },
+      { $match: param },
+      { $skip: start },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 1,
+          city: 1,
+          address: 1,
+          telephone: 1,
+          name: 1,
+          email: 1,
+        },
+      },
+    ]);
 
     const count = await Customer.countDocuments(param);
     res.json({
       customers,
-      count,
+      count: customers?.length > count ? customers?.length : count,
     });
   } catch (error) {
     res.status(200).json({
@@ -847,16 +937,15 @@ const getCustomersByBranch = (req, res, next) => {
 };
 
 // Get a customer
-const getCustomer = (req, res, next) => {
-  Customer.findById(req.params.id, (error, data) => {
-    if (error) {
-      res.json({ message: error.message });
-    } else {
-      res.json(data);
-    }
-  });
+const getCustomer = async (req, res, next) => {
+  try {
+    const data = await Customer.findById(req.params.id).lean();
+    const city = await Place.findById(data.place).lean();
+    res.json({ ...(data || {}), city });
+  } catch (error) {
+    res.json({ message: error.message });
+  }
 };
-
 // Add a customer
 const addCustomer = (req, res, next) => {
   const customer = new Customer({

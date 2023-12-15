@@ -9,7 +9,6 @@ import {
 } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import { Alert, Stack } from "@mui/material";
-import { makeStyles } from "@material-ui/core/styles";
 import { LoadingSpinner } from "../../../../ui-controls";
 import {
   emailRegEx,
@@ -21,13 +20,6 @@ import ContactPersonList from "../contact-person/ContactPersonList";
 import ContactPersonForm from "../contact-person/ContactPersonForm";
 import { useDispatch, useSelector } from "react-redux";
 import { createCustomer, selectIsLoading } from "./slice/customerSlice";
-
-const useStyles = makeStyles(() => ({
-  menuPaper: {
-    maxHeight: 300,
-    maxWidth: 100,
-  },
-}));
 
 const initialErrorState = {
   name: {
@@ -74,8 +66,7 @@ const CustomerAdd = () => {
   const [httpError, setHttpError] = useState("");
   const [editContact, setEditContact] = useState(null);
   const isLoading = useSelector(selectIsLoading);
-
-  const classes = useStyles();
+  const { places } = useSelector(({ customer }) => customer);
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
@@ -101,17 +92,18 @@ const CustomerAdd = () => {
     });
   };
 
-  const autocompleteChangeListener = (e, value) => {
+  const autocompleteChangeListener = (value, key) => {
     setCustomer((currState) => {
       return {
         ...currState,
-        state: value,
+        [key]: value,
       };
     });
   };
   const submitHandler = (e) => {
     e.preventDefault();
     if (!validateForm(customer)) {
+      customer.city = customer.city?._id;
       dispatch(createCustomer(customer))
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
@@ -354,7 +346,7 @@ const CustomerAdd = () => {
                         options={states}
                         value={customer.state || null}
                         onChange={(e, value) =>
-                          autocompleteChangeListener(e, value)
+                          autocompleteChangeListener(value, "state")
                         }
                         getOptionLabel={(option) => option}
                         openOnFocus
@@ -366,14 +358,21 @@ const CustomerAdd = () => {
                   </div>
                   <div className="grid-item">
                     <FormControl fullWidth>
-                      <TextField
+                      <Autocomplete
+                        disablePortal
+                        autoSelect
                         size="small"
-                        variant="outlined"
-                        label="City"
-                        value={customer.city}
-                        onChange={inputChangeHandler}
                         name="city"
-                        id="city"
+                        options={places}
+                        value={customer.city || null}
+                        onChange={(e, value) =>
+                          autocompleteChangeListener(value, "city")
+                        }
+                        getOptionLabel={(option) => option.name}
+                        openOnFocus
+                        renderInput={(params) => (
+                          <TextField {...params} label="City" fullWidth />
+                        )}
                       />
                     </FormControl>
                   </div>

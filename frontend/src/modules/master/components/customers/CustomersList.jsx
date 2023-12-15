@@ -20,6 +20,7 @@ import {
   deleteCustomer as removeCustomer,
   selectIsLoading,
   setSearch,
+  getPlaces,
 } from "./slice/customerSlice";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
 import { isSuperAdminOrAdmin } from "../../../../services/utils";
@@ -128,6 +129,10 @@ const CustomersList = () => {
   useEffect(() => {
     fetchData();
   }, [paginationModel, searchType, search]);
+
+  useEffect(() => {
+    dispatch(getPlaces());
+  }, []);
 
   const onSearchChange = (e) => {
     dispatch(setSearch(e.target.value));
@@ -283,6 +288,7 @@ const CustomersList = () => {
                     renderInput={(params) => (
                       <TextField {...params} label="Type" fullWidth />
                     )}
+                    itemID="_id"
                   />
                   <TextField
                     variant="standard"

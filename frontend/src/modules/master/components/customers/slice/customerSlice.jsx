@@ -3,14 +3,23 @@ import {
   addCustomer,
   fetchCustomer,
   fetchCustomers,
+  fetchPlaces,
   modifyCustomer,
   removeCustomer,
 } from "./customerActions";
 const initialState = {
   status: "idle",
   search: "",
+  places: [],
 };
 
+export const getPlaces = createAsyncThunk(
+  "GET_PLACES",
+  async (requestObject) => {
+    const { data, status } = await fetchPlaces(requestObject);
+    return { data, status };
+  }
+);
 export const createCustomer = createAsyncThunk(
   "CREATE_CUSTOMER",
   async (requestObject) => {
@@ -66,6 +75,10 @@ export const customerSlice = createSlice({
       })
       .addCase(createCustomer.rejected, (state) => {
         state.status = "failed";
+      })
+
+      .addCase(getPlaces.fulfilled, (state, { payload }) => {
+        state.places = payload.data;
       })
 
       .addCase(getCustomer.pending, (state) => {

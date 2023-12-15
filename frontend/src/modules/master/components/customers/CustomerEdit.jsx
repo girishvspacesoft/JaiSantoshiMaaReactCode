@@ -9,11 +9,9 @@ import {
 } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import { Alert, Stack } from "@mui/material";
-import { makeStyles } from "@material-ui/core/styles";
 import { LoadingSpinner } from "../../../../ui-controls";
 import {
   emailRegEx,
-  mobileNoRegEx,
   states,
   validatePhoneNumber,
 } from "../../../../services/utils";
@@ -25,13 +23,6 @@ import {
   selectIsLoading,
   updateCustomer,
 } from "./slice/customerSlice";
-
-const useStyles = makeStyles(() => ({
-  menuPaper: {
-    maxHeight: 300,
-    maxWidth: 100,
-  },
-}));
 
 const initialState = {
   name: "",
@@ -80,8 +71,7 @@ const CustomerEdit = () => {
   const [httpError, setHttpError] = useState("");
   const [editContact, setEditContact] = useState(null);
   const isLoading = useSelector(selectIsLoading);
-
-  const classes = useStyles();
+  const { places } = useSelector(({ customer }) => customer);
 
   const location = useLocation();
   const { customerId } = location.state;
@@ -135,6 +125,7 @@ const CustomerEdit = () => {
   const submitHandler = (e) => {
     e.preventDefault();
     if (!validateForm(customer)) {
+      customer.city = customer.city?._id;
       dispatch(updateCustomer(customer))
         .then(({ payload = {} }) => {
           const { message } = payload?.data || {};
@@ -399,14 +390,21 @@ const CustomerEdit = () => {
                   </div>
                   <div className="grid-item">
                     <FormControl fullWidth>
-                      <TextField
+                      <Autocomplete
+                        disablePortal
+                        autoSelect
                         size="small"
-                        variant="outlined"
-                        label="City"
-                        value={customer.city}
-                        onChange={inputChangeHandler}
                         name="city"
-                        id="city"
+                        options={places}
+                        value={customer.city || null}
+                        onChange={(e, value) =>
+                          autocompleteChangeListener(value, "city")
+                        }
+                        getOptionLabel={(option) => option.name}
+                        openOnFocus
+                        renderInput={(params) => (
+                          <TextField {...params} label="City" fullWidth />
+                        )}
                       />
                     </FormControl>
                   </div>

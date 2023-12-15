@@ -1,6 +1,11 @@
 import fetchFromApiServer from "@services/api";
 import { getEmpId } from "@services/utils";
 
+export function fetchPlaces() {
+  const url = `api/master/getPlaces`;
+  return fetchFromApiServer("GET", url);
+}
+
 export function addCustomer(requestObject) {
   requestObject.createdBy = getEmpId();
   const url = `api/master/addCustomer`;

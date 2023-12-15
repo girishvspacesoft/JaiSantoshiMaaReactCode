@@ -4,6 +4,7 @@ const { db } = require("../database/db");
 const csv = require("csvtojson");
 const Customer = require("../models/Customer");
 const { map, find } = require("lodash");
+const Place = require("../models/Place");
 
 mongoose.Promise = global.Promise;
 
@@ -23,12 +24,16 @@ async function init() {
 
     const data = await csv().fromFile(filePath);
     const places = await csv().fromFile(placePath);
-
+    const fetchedPlaces = await Place.find().lean();
     const list = map(data, (customer) => {
       const place = find(places, ({ PlaceID }) => PlaceID === customer.PlaceID);
+      const fetchedPlace = find(
+        fetchedPlaces,
+        ({ name }) => name === place?.name
+      );
       return {
         ...customer,
-        city: place?.name,
+        city: fetchedPlace?._id,
         address: customer?.address || place?.name,
       };
     });

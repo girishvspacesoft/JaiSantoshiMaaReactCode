@@ -288,8 +288,10 @@ const TransactionDetails = ({ articles, lorryReceipt, setLorryReceipt }) => {
     ) {
       const selectedRate = rateMaster.rates?.find?.(
         (rate) =>
-          rate.article?.toLowerCase?.() ===
-          transactionDetail.article.name?.toLowerCase?.()
+          (rate.article?.toLowerCase?.() ===
+            transactionDetail.article.name?.toLowerCase?.() &&
+            rate.station === lorryReceipt?.consignee?.cityId) ||
+          rate.station === lorryReceipt?.consignee?.city
       );
       if (selectedRate) {
         setTransactionDetail((currState) => {
