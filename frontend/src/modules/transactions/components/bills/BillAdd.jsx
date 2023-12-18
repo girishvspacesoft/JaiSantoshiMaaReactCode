@@ -16,7 +16,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import LorryReceipts from "./LorryReceipts";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { base64ToObjectURL, validateNumber } from "../../../../services/utils";
 import {
   createBill,
@@ -510,7 +510,7 @@ const BillAdd = () => {
                   size="small"
                   error={formErrors.customer.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     size="small"

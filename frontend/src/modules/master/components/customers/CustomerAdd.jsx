@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import { Alert, Stack } from "@mui/material";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   emailRegEx,
   states,
@@ -358,7 +358,7 @@ const CustomerAdd = () => {
                   </div>
                   <div className="grid-item">
                     <FormControl fullWidth>
-                      <Autocomplete
+                      <AutoComplete
                         disablePortal
                         autoSelect
                         size="small"

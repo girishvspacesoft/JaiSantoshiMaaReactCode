@@ -15,7 +15,7 @@ import { Alert, Stack } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import TransactionDetails from "./TransactionDetails";
 
 import {
@@ -775,7 +775,7 @@ const LorryReceiptEdit = () => {
                   size="small"
                   error={formErrors.consignor.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     id="consignor"
                     freeSolo={!!lorryReceipt.consignorName}
                     autoSelect
@@ -900,7 +900,7 @@ const LorryReceiptEdit = () => {
                   size="small"
                   error={formErrors.consignee.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     id="consignee"
                     freeSolo={!!lorryReceipt.consigneeName}
                     autoSelect

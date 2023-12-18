@@ -15,7 +15,7 @@ import { Alert, Stack } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   getFormattedDate,
   getFormattedLSNumber,
@@ -634,7 +634,7 @@ const PaymentCollection = () => {
             </div>
             <div className="grid-item">
               <FormControl fullWidth size="small">
-                <Autocomplete
+                <AutoComplete
                   disablePortal
                   size="small"
                   name="customer"

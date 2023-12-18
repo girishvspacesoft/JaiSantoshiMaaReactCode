@@ -12,7 +12,7 @@ import { Alert, Stack } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import TaxDetailForm from "../taxes/TaxDetailForm";
 import TaxDetailList from "../taxes/TaxDetailList";
 import { useDispatch, useSelector } from "react-redux";
@@ -276,7 +276,7 @@ const VehicleAdd = () => {
                     size="small"
                     error={formErrors.owner.invalid}
                   >
-                    <Autocomplete
+                    <AutoComplete
                       autoSelect
                       size="small"
                       name="owner"

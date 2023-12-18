@@ -5,9 +5,9 @@ import {
   FormHelperText,
   Button,
   InputAdornment,
-  Autocomplete,
 } from "@mui/material";
 import { validateNumber } from "../../../../services/utils";
+import { AutoComplete } from "../../../../ui-controls";
 
 const initialState = {
   station: null,
@@ -106,7 +106,7 @@ const Stations = ({ places, quotation, setQuotation }) => {
               size="small"
               error={formErrors.station.invalid}
             >
-              <Autocomplete
+              <AutoComplete
                 disablePortal
                 autoSelect
                 size="small"

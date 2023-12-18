@@ -13,7 +13,7 @@ import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 
 import TaxDetailForm from "../taxes/TaxDetailForm";
 import TaxDetailList from "../taxes/TaxDetailList";
@@ -297,7 +297,7 @@ const VehicleAdd = () => {
                     size="small"
                     error={formErrors.owner.invalid}
                   >
-                    <Autocomplete
+                    <AutoComplete
                       disablePortal
                       autoSelect
                       size="small"

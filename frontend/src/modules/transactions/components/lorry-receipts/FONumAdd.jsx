@@ -15,7 +15,7 @@ import {
   getLorryReceipts,
   selectIsLoading,
 } from "./slice/lorryReceiptSlice";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { isSuperAdminOrAdmin } from "../../../../services/utils";
 
 const initialState = {
@@ -197,12 +197,13 @@ const LorryReceiptAdd = () => {
                   size="small"
                   error={formErrors.lr.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     autoHighlight={true}
                     size="small"
                     name="vehicleNo"
+                    sortKey="lrNo"
                     options={lorryReceipts}
                     value={lorryReceipt.lr || null}
                     onChange={(e, value) =>

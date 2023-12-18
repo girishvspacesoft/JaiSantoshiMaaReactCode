@@ -15,7 +15,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   base64ToObjectURL,
   isSuperAdminOrAdmin,
@@ -628,9 +628,10 @@ const LoadingSlipAdd = () => {
                   size="small"
                   error={formErrors.vehicle.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
+                    sortKey="vehicleNo"
                     size="small"
                     name="vehicle"
                     options={vehicles}
@@ -734,7 +735,7 @@ const LoadingSlipAdd = () => {
                   size="small"
                   error={formErrors.driver.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     size="small"
                     name="driver"
                     id="driver"
@@ -805,7 +806,7 @@ const LoadingSlipAdd = () => {
                   size="small"
                   error={formErrors.from.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     size="small"
@@ -836,7 +837,7 @@ const LoadingSlipAdd = () => {
                   size="small"
                   error={formErrors.to.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     size="small"

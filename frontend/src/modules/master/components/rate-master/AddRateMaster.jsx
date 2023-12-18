@@ -13,7 +13,7 @@ import Paper from "@mui/material/Paper";
 import { Alert, Stack } from "@mui/material";
 import { IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createRateMaster,
@@ -359,7 +359,7 @@ const AddRateMaster = () => {
                 <div className="grid grid-6-col">
                   <div className="grid-item">
                     <FormControl fullWidth error={formErrors.customer.invalid}>
-                      <Autocomplete
+                      <AutoComplete
                         disablePortal
                         autoSelect
                         size="small"
@@ -392,7 +392,7 @@ const AddRateMaster = () => {
                 <div className="grid grid-6-col">
                   <div className="grid-item">
                     <FormControl fullWidth error={formErrors.article.invalid}>
-                      <Autocomplete
+                      <AutoComplete
                         autoSelect
                         size="small"
                         name="article"
@@ -418,7 +418,7 @@ const AddRateMaster = () => {
                   </div>
                   <div className="grid-item">
                     <FormControl fullWidth error={formErrors.station.invalid}>
-                      <Autocomplete
+                      <AutoComplete
                         autoSelect
                         size="small"
                         name="place"

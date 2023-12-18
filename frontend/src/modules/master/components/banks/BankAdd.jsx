@@ -137,12 +137,12 @@ const BankAdd = () => {
     if (!formData.micr?.trim?.()) {
       errors.micr = { invalid: true, message: "MICR code is required" };
     }
-    if (!formData.phone?.trim?.()) {
-      errors.phone = {
-        invalid: true,
-        message: "Phone is required",
-      };
-    }
+    // if (!formData.phone?.trim?.()) {
+    //   errors.phone = {
+    //     invalid: true,
+    //     message: "Phone is required",
+    //   };
+    // }
     if (
       formData.phone &&
       formData.phone?.trim?.() !== "" &&
@@ -153,9 +153,9 @@ const BankAdd = () => {
         message: "Phone should be 10 digits number",
       };
     }
-    if (!formData.email?.trim?.()) {
-      errors.email = { invalid: true, message: "Email is required" };
-    }
+    // if (!formData.email?.trim?.()) {
+    //   errors.email = { invalid: true, message: "Email is required" };
+    // }
     if (
       formData.email &&
       formData.email?.trim?.() !== "" &&

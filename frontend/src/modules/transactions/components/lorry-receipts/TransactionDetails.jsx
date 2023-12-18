@@ -17,7 +17,7 @@ import {
   getRateMasterByCustomer,
   selectIsLoading,
 } from "./slice/lorryReceiptSlice";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { validateNumber } from "../../../../services/utils";
 
 const RATE_TYPES = [
@@ -477,7 +477,7 @@ const TransactionDetails = ({ articles, lorryReceipt, setLorryReceipt }) => {
               size="small"
               error={formErrors.article.invalid}
             >
-              <Autocomplete
+              <AutoComplete
                 autoSelect
                 autoHighlight={true}
                 size="small"
@@ -498,6 +498,11 @@ const TransactionDetails = ({ articles, lorryReceipt, setLorryReceipt }) => {
                       inputRef = input;
                     }}
                   />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props} key={option._id}>
+                    {option.name}
+                  </li>
                 )}
               />
               {formErrors.article.invalid && (

@@ -21,7 +21,7 @@ import {
   getFormattedDate,
   isSuperAdminOrAdmin,
 } from "../../../../services/utils";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   downloadLRReport,
   getBranches,
@@ -371,7 +371,7 @@ const PendingLRStockStatus = () => {
             <Grid container spacing={3}>
               <Grid item xs={3}>
                 <FormControl fullWidth size="small">
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     autoHighlight={true}
@@ -396,7 +396,7 @@ const PendingLRStockStatus = () => {
               </Grid>
               <Grid item xs={3}>
                 <FormControl fullWidth size="small">
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     autoHighlight={true}

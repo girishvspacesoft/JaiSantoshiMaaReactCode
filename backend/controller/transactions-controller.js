@@ -39,6 +39,7 @@ const Quotation = require("../models/Quotation");
 const sendEmail = require("../controller/email");
 const { translator } = require("./openAI");
 const Place = require("../models/Place");
+const { TO_BILLED } = require("../utils/constant");
 
 const getLorryReceipts = async (req, res, next) => {
   const { branch, search, lsId, branches, from, to } = req.body;
@@ -336,7 +337,10 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
       { assoBill: req.body.billId },
       {
         branch: req.body.branch,
-        consignor: req.body.consignor,
+        $or: [
+          { toBilled: TO_BILLED[0].value, consignor: req.body.consignor },
+          { toBilled: TO_BILLED[1].value, consignee: req.body.consignor },
+        ],
       },
     ];
   } else {
@@ -344,7 +348,10 @@ const getLorryReceiptsByConsignor = async (req, res, next) => {
       ...query,
       ...{
         branch: req.body.branch,
-        consignor: req.body.consignor,
+        $or: [
+          { toBilled: TO_BILLED[0].value, consignor: req.body.consignor },
+          { toBilled: TO_BILLED[1].value, consignee: req.body.consignor },
+        ],
       },
     };
   }
@@ -2565,7 +2572,7 @@ const updateBills = (req, res, next) => {
   let updatedBills = [];
   req.body.bills.forEach(async (bill) => {
     try {
-      const billToBeUpdated = await Bill.findOne({ _id: bill._id }).lean();
+      const billToBeUpdated = await Bill.findOne({ _id: bill._id });
       billToBeUpdated.paymentCollection.push(bill.payment);
 
       let savedBill = await billToBeUpdated.save();
@@ -2642,7 +2649,7 @@ const saveSupplierPayments = (req, res, next) => {
   let updatedLs = [];
   req.body.loadingSlips.forEach(async (ls) => {
     try {
-      const LSToBeUpdated = await LoadingSlip.findOne({ _id: ls.ls_id }).lean();
+      const LSToBeUpdated = await LoadingSlip.findOne({ _id: ls.ls_id });
       LSToBeUpdated.supplierPayments.push(ls.payment);
       let savedLs = await LSToBeUpdated.save();
       if (savedLs) {
@@ -2715,7 +2722,7 @@ const updateSupplierBills = (req, res, next) => {
     try {
       const billsToBeUpdated = await SuppliersBill.findOne({
         _id: suppBill._id,
-      }).lean();
+      });
       billsToBeUpdated.payments.push(suppBill.payment);
       let savedBill = await billsToBeUpdated.save();
       if (savedBill) {

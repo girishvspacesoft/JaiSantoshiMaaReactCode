@@ -23,7 +23,7 @@ import { Alert, Stack } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import Stations from "./Stations";
 import {
   getCustomers,
@@ -362,7 +362,7 @@ const QuotationEdit = () => {
                   size="small"
                   error={formErrors.customer.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     id="customerId"
                     autoSelect
                     size="small"

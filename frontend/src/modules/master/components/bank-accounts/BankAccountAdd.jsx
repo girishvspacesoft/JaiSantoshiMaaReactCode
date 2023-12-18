@@ -181,34 +181,34 @@ const BankAccountAdd = () => {
         message: "Account type is required",
       };
     }
-    if (!formData.customerId?.trim?.()) {
-      errors.customerId = {
-        invalid: true,
-        message: "Customer ID is required",
-      };
-    }
+    // if (!formData.customerId?.trim?.()) {
+    //   errors.customerId = {
+    //     invalid: true,
+    //     message: "Customer ID is required",
+    //   };
+    // }
     if (!formData.accountNo?.trim?.()) {
       errors.accountNo = {
         invalid: true,
         message: "Account number is required",
       };
     }
-    if (!formData.openingBalance?.trim?.()) {
-      errors.openingBalance = {
-        invalid: true,
-        message: "Opening balance is required",
-      };
-    }
-    if (
-      formData.openingBalance?.trim?.() !== "" &&
-      isNaN(formData.openingBalance) &&
-      isNaN(parseFloat(formData.openingBalance))
-    ) {
-      errors.openingBalance = {
-        invalid: true,
-        message: "Opening balance should be a number",
-      };
-    }
+    // if (!formData.openingBalance?.trim?.()) {
+    //   errors.openingBalance = {
+    //     invalid: true,
+    //     message: "Opening balance is required",
+    //   };
+    // }
+    // if (
+    //   formData.openingBalance?.trim?.() !== "" &&
+    //   isNaN(formData.openingBalance) &&
+    //   isNaN(parseFloat(formData.openingBalance))
+    // ) {
+    //   errors.openingBalance = {
+    //     invalid: true,
+    //     message: "Opening balance should be a number",
+    //   };
+    // }
 
     let validationErrors = false;
     for (const key in errors) {

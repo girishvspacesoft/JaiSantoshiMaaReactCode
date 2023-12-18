@@ -9,7 +9,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { Alert, Stack } from "@mui/material";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getBranch,
@@ -293,7 +293,7 @@ const BranchEdit = () => {
                 size="small"
                 error={formErrors.place.invalid}
               >
-                <Autocomplete
+                <AutoComplete
                   disablePortal
                   size="small"
                   name="place"

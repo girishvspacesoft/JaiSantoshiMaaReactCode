@@ -9,7 +9,7 @@ import {
   Autocomplete,
   TextField,
 } from "@mui/material";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import LRPaymentAdvice from "./LRPaymentAdvice";
 import SupplierBills from "./SupplierBills";
 import { useDispatch, useSelector } from "react-redux";
@@ -148,7 +148,7 @@ const PaymentAdvice = () => {
             </div>
             <div className="grid-item">
               <FormControl fullWidth size="small">
-                <Autocomplete
+                <AutoComplete
                   disablePortal
                   size="small"
                   name="supplier"
@@ -157,6 +157,11 @@ const PaymentAdvice = () => {
                   onChange={supplierChangeHandler}
                   getOptionLabel={(supplier) => supplier.name || ""}
                   openOnFocus
+                  renderOption={(props, option) => (
+                    <li {...props} key={option._id}>
+                      {option.name}
+                    </li>
+                  )}
                   renderInput={(params) => (
                     <TextField {...params} label="Select supplier" fullWidth />
                   )}

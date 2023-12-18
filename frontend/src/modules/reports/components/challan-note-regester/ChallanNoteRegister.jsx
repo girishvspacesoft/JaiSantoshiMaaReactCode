@@ -16,7 +16,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { isSuperAdminOrAdmin } from "../../../../services/utils";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   downloadChallanReport,
   getBranches,
@@ -413,7 +413,7 @@ const ChallanNoteRegister = () => {
               </Grid>
               <Grid item xs={3}>
                 <FormControl fullWidth size="small">
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     autoHighlight={true}

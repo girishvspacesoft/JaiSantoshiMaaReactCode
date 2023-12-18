@@ -6,13 +6,12 @@ import {
   FormHelperText,
   Button,
   Paper,
-  Autocomplete,
 } from "@mui/material";
 import { Alert, Stack } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAllLRAck,
@@ -264,10 +263,11 @@ const LRAcknowledgementAdd = () => {
                   size="small"
                   error={formErrors.lrNo.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     size="small"
                     name="lrNo"
+                    sortKey="lrNo"
                     options={lorryReceipts}
                     value={lorryReceipt.lrNo}
                     onChange={(e, value) =>

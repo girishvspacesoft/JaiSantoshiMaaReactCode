@@ -23,7 +23,7 @@ import {
   getFormattedDate,
   isSuperAdminOrAdmin,
 } from "../../../../services/utils";
-import { LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, LoadingSpinner } from "../../../../ui-controls";
 import {
   downloadLRReport,
   getBranches,
@@ -423,7 +423,7 @@ const LorryReceiptRegister = () => {
               </Grid>
               <Grid item xs={3}>
                 <FormControl fullWidth size="small">
-                  <Autocomplete
+                  <AutoComplete
                     disablePortal
                     autoSelect
                     autoHighlight={true}

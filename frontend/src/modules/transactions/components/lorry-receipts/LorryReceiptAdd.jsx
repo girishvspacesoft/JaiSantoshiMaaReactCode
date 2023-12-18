@@ -16,7 +16,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
-import { Dialog, LoadingSpinner } from "../../../../ui-controls";
+import { AutoComplete, Dialog, LoadingSpinner } from "../../../../ui-controls";
 import TransactionDetails from "./TransactionDetails";
 import {
   base64ToObjectURL,
@@ -135,6 +135,10 @@ const initialErrorState = {
     invalid: false,
     message: "",
   },
+  toBilled: {
+    invalid: false,
+    message: "",
+  },
   payMode: {
     invalid: false,
     message: "",
@@ -169,6 +173,7 @@ const LorryReceiptAdd = () => {
     branch: state,
     collectAt: state,
     deliveryType: DELIVERY_TYPES[0] || null,
+    toBilled: TO_BILLED[0] || null,
   });
   const [formErrors, setFormErrors] = useState(initialErrorState);
   const [httpError, setHttpError] = useState("");
@@ -419,6 +424,12 @@ const LorryReceiptAdd = () => {
         message: "Payment type is required",
       };
     }
+    if (!formData.toBilled) {
+      errors.toBilled = {
+        invalid: true,
+        message: "To Billed is required",
+      };
+    }
     // if (
     //   formData.consigneeEmail?.trim?.() &&
     //   !emailRegEx.test(formData.consigneeEmail)
@@ -585,7 +596,7 @@ const LorryReceiptAdd = () => {
               collectAt: option,
             }
           : {}),
-        ...(name === "toBilled"
+        ...(name === "toBilled" && option
           ? {
               serviceTaxBy:
                 SERVICE_TAX_BY.find(({ value }) => option.value === value) ||
@@ -753,7 +764,7 @@ const LorryReceiptAdd = () => {
                   size="small"
                   error={formErrors.consignor.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     id="consignor"
                     freeSolo={!!lorryReceipt.consignorName}
                     autoSelect
@@ -877,7 +888,7 @@ const LorryReceiptAdd = () => {
                   size="small"
                   error={formErrors.consignee.invalid}
                 >
-                  <Autocomplete
+                  <AutoComplete
                     id="consignee"
                     freeSolo={!!lorryReceipt.consigneeName}
                     autoSelect
@@ -1206,7 +1217,11 @@ const LorryReceiptAdd = () => {
                 </FormControl>
               </div>
               <div className="grid-item">
-                <FormControl fullWidth size="small">
+                <FormControl
+                  fullWidth
+                  size="small"
+                  error={formErrors.toBilled.invalid}
+                >
                   <Autocomplete
                     id="toBilled"
                     disablePortal
@@ -1226,9 +1241,15 @@ const LorryReceiptAdd = () => {
                         name="toBilled"
                         label="To billed"
                         fullWidth
+                        error={formErrors.toBilled.invalid}
                       />
                     )}
                   />
+                  {formErrors.toBilled.invalid && (
+                    <FormHelperText>
+                      {formErrors.toBilled.message}
+                    </FormHelperText>
+                  )}
                 </FormControl>
               </div>
               <div className="grid-item">
