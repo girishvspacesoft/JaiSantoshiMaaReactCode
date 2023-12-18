@@ -63,20 +63,18 @@ const FreightDetailsEdit = ({
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (lorryReceipts?.length) {
-      const updatedLorryReceipts = [...lorryReceipts];
-      updatedLorryReceipts?.forEach?.((lr) => {
-        let weight = 0;
-        lr.transactions?.forEach?.((transaction) => {
-          weight += +transaction.weight;
-        });
-        lr.weight = weight;
-        lr.checked = lr?.checked || false;
-        lr.show = search ? lr.lrNo?.toUpperCase?.().includes?.(search) : true;
+    const updatedLorryReceipts = [...lorryReceipts];
+    updatedLorryReceipts?.forEach?.((lr) => {
+      let weight = 0;
+      lr.transactions?.forEach?.((transaction) => {
+        weight += +transaction.weight;
       });
+      lr.weight = weight;
+      lr.checked = lr?.checked || false;
+      lr.show = search ? lr.lrNo?.toUpperCase?.().includes?.(search) : true;
+    });
 
-      setUpdatedLR(updatedLorryReceipts);
-    }
+    setUpdatedLR(updatedLorryReceipts);
   }, [lorryReceipts]);
 
   useEffect(() => {
